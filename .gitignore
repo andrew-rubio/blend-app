@@ -4,3 +4,6 @@ apm_modules/
 **/AGENTS.md
 AGENTS.md
 .apm
+
+src/Blend.Web/.next/
+src/Blend.Web/node_modules/
