@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSearchStore } from '@/stores/searchStore';
 import { useSearchRecipes } from '@/hooks/useSearch';
@@ -17,43 +17,40 @@ export default function ExplorePage() {
   const { filters, activeFilterCount, setQuery, setFilters, clearFilters, clearSearch } =
     useSearchStore();
 
-  // Initialise input directly from URL so no state mutation is needed inside an effect
-  const [inputValue, setInputValue] = useState(() => searchParams.get('q') ?? '');
+  // Capture initial URL params once via lazy useState initializer (stable across renders)
+  const [initParams] = useState(() => ({
+    q: searchParams.get('q') ?? '',
+    cuisines: searchParams.get('cuisines')?.split(',').filter(Boolean) ?? [],
+    diets: searchParams.get('diets')?.split(',').filter(Boolean) ?? [],
+    dishTypes: searchParams.get('dishTypes')?.split(',').filter(Boolean) ?? [],
+    maxReadyTime: searchParams.get('maxReadyTime')
+      ? Number(searchParams.get('maxReadyTime'))
+      : undefined,
+  }));
+
+  const [inputValue, setInputValue] = useState(initParams.q);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-
-  // Stable refs for values that change identity in tests but are stable in production
-  const routerRef = useRef(router);
-  routerRef.current = router;
-  const setQueryRef = useRef(setQuery);
-  setQueryRef.current = setQuery;
-
-  // Capture the initial searchParams snapshot for the mount effect
-  const initialSearchParams = useRef(searchParams);
 
   const debouncedQuery = useDebounce(inputValue, 300);
 
-  // Sync store from URL on mount only (intentional empty deps — reads snapshot once)
+  // Sync store from URL on mount only — initParams is stable so deps are satisfied
   useEffect(() => {
-    const sp = initialSearchParams.current;
-    const urlQuery = sp.get('q') ?? '';
-    const urlCuisines = sp.get('cuisines')?.split(',').filter(Boolean) ?? [];
-    const urlDiets = sp.get('diets')?.split(',').filter(Boolean) ?? [];
-    const urlDishTypes = sp.get('dishTypes')?.split(',').filter(Boolean) ?? [];
-    const urlMaxReadyTime = sp.get('maxReadyTime');
-
-    setQueryRef.current(urlQuery);
+    setQuery(initParams.q);
     setFilters({
-      cuisines: urlCuisines,
-      diets: urlDiets,
-      dishTypes: urlDishTypes,
-      maxReadyTime: urlMaxReadyTime ? Number(urlMaxReadyTime) : undefined,
+      cuisines: initParams.cuisines,
+      diets: initParams.diets,
+      dishTypes: initParams.dishTypes,
+      maxReadyTime: initParams.maxReadyTime,
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [initParams, setQuery, setFilters]);
 
-  // Sync debounced query + filters to store and URL
+  // Sync debounced query to Zustand store
   useEffect(() => {
-    setQueryRef.current(debouncedQuery);
+    setQuery(debouncedQuery);
+  }, [debouncedQuery, setQuery]);
+
+  // Sync debounced query + filters to URL
+  useEffect(() => {
     const params = new URLSearchParams();
     if (debouncedQuery) params.set('q', debouncedQuery);
     if (filters.cuisines.length) params.set('cuisines', filters.cuisines.join(','));
@@ -61,8 +58,8 @@ export default function ExplorePage() {
     if (filters.dishTypes.length) params.set('dishTypes', filters.dishTypes.join(','));
     if (filters.maxReadyTime !== undefined) params.set('maxReadyTime', String(filters.maxReadyTime));
     const search = params.toString();
-    routerRef.current.replace(`/explore${search ? `?${search}` : ''}`, { scroll: false });
-  }, [debouncedQuery, filters]);
+    router.replace(`/explore${search ? `?${search}` : ''}`, { scroll: false });
+  }, [debouncedQuery, filters, router]);
 
   const { data, isLoading, isFetchingNextPage, hasNextPage, error, fetchNextPage, refetch } =
     useSearchRecipes({ query: debouncedQuery, filters });
@@ -73,8 +70,8 @@ export default function ExplorePage() {
   const handleClear = useCallback(() => {
     setInputValue('');
     clearSearch();
-    routerRef.current.replace('/explore', { scroll: false });
-  }, [clearSearch]);
+    router.replace('/explore', { scroll: false });
+  }, [clearSearch, router]);
 
   const handleFiltersChange = useCallback(
     (newFilters: SearchFilters) => {

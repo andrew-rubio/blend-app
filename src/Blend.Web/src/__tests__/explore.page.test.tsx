@@ -5,9 +5,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SearchResult } from '@/types/search';
 
 // Mock next/navigation
+const mockReplace = vi.fn();
+const mockRouter = { replace: mockReplace };
+const mockSearchParams = new URLSearchParams();
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ replace: vi.fn() }),
-  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => mockRouter,
+  useSearchParams: () => mockSearchParams,
 }));
 
 // Mock the search API
