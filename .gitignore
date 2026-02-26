@@ -4,3 +4,14 @@ apm_modules/
 **/AGENTS.md
 AGENTS.md
 .apm
+
+# .NET build artifacts
+**/bin/
+**/obj/
+*.user
+.vs/
+.idea/
+
+# NuGet
+*.nupkg
+nuget.config
