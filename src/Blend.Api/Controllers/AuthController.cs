@@ -130,20 +130,13 @@ public class AuthController : ControllerBase
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh()
     {
-        var refreshToken = Request.Cookies[RefreshTokenCookieName];
-        if (string.IsNullOrEmpty(refreshToken))
+        // Cookie value is Base64(userId:rawToken); hash the full cookie value to compare with stored hash.
+        var cookieValue = Request.Cookies[RefreshTokenCookieName];
+        if (string.IsNullOrEmpty(cookieValue))
             return Unauthorized(new ProblemDetails { Title = "Unauthorized", Detail = "No refresh token.", Status = 401 });
 
-        var tokenHash = HashToken(refreshToken);
-
-        string? userId = null;
-        try
-        {
-            var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(refreshToken));
-            var colonIdx = decoded.IndexOf(':');
-            if (colonIdx > 0) userId = decoded[..colonIdx];
-        }
-        catch { }
+        var userId = ExtractUserIdFromCookie(cookieValue);
+        var tokenHash = HashToken(cookieValue);
 
         BlendUser? user = null;
         if (userId != null)
@@ -165,17 +158,10 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public async Task<IActionResult> Logout()
     {
-        var refreshToken = Request.Cookies[RefreshTokenCookieName];
-        if (!string.IsNullOrEmpty(refreshToken))
+        var cookieValue = Request.Cookies[RefreshTokenCookieName];
+        if (!string.IsNullOrEmpty(cookieValue))
         {
-            string? userId = null;
-            try
-            {
-                var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(refreshToken));
-                var colonIdx = decoded.IndexOf(':');
-                if (colonIdx > 0) userId = decoded[..colonIdx];
-            }
-            catch { }
+            var userId = ExtractUserIdFromCookie(cookieValue);
 
             if (userId != null)
             {
@@ -276,6 +262,17 @@ public class AuthController : ControllerBase
                 Roles = roles.ToList()
             }
         });
+    }
+
+    private static string? ExtractUserIdFromCookie(string cookieValue)
+    {
+        try
+        {
+            var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(cookieValue));
+            var colonIdx = decoded.IndexOf(':');
+            return colonIdx > 0 ? decoded[..colonIdx] : null;
+        }
+        catch { return null; }
     }
 
     private static string HashToken(string token)

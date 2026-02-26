@@ -857,7 +857,7 @@
     ]
   },
   "packageFolders": {
-    "/home/runner/.nuget/packages/": {}
+    "/tmp/codeql-scratch-454f833ba1898e6c/dbs/csharp/working/packages": {}
   },
   "project": {
     "version": "1.0.0",
@@ -865,7 +865,7 @@
       "projectUniqueName": "/home/runner/work/blend-app/blend-app/src/Blend.Api/Blend.Api.csproj",
       "projectName": "Blend.Api",
       "projectPath": "/home/runner/work/blend-app/blend-app/src/Blend.Api/Blend.Api.csproj",
-      "packagesPath": "/home/runner/.nuget/packages/",
+      "packagesPath": "/tmp/codeql-scratch-454f833ba1898e6c/dbs/csharp/working/packages",
       "outputPath": "/home/runner/work/blend-app/blend-app/src/Blend.Api/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
