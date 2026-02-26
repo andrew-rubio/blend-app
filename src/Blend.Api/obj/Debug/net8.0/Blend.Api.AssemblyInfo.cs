@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Blend.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+aa07f4af0d034177ea2a7a7c451382bf0ac340ef")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7314a831e53f5825dab689c52ddceac12a03d143")]
 [assembly: System.Reflection.AssemblyProductAttribute("Blend.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Blend.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
