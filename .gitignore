@@ -4,3 +4,9 @@ apm_modules/
 **/AGENTS.md
 AGENTS.md
 .apm
+
+# .NET build outputs
+**/bin/
+**/obj/
+*.user
+.vs/
