@@ -1,6 +1,6 @@
 # Task 016: Ingredient Knowledge Base — Backend
 
-> **GitHub Issue:** [#27](https://github.com/andrew-rubio/blend-app/issues/27)
+> **GitHub Issue:** [#15](https://github.com/andrew-rubio/blend-app/issues/15)
 
 ## Description
 

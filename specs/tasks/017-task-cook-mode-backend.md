@@ -1,6 +1,6 @@
 # Task 017: Cook Mode Sessions — Backend
 
-> **GitHub Issue:** [#28](https://github.com/andrew-rubio/blend-app/issues/28)
+> **GitHub Issue:** [#16](https://github.com/andrew-rubio/blend-app/issues/16)
 
 ## Description
 

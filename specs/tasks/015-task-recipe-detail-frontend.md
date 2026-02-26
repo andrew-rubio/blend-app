@@ -1,6 +1,6 @@
 # Task 015: Recipe Detail View — Frontend
 
-> **GitHub Issue:** [#26](https://github.com/andrew-rubio/blend-app/issues/26)
+> **GitHub Issue:** [#14](https://github.com/andrew-rubio/blend-app/issues/14)
 
 ## Description
 

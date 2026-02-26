@@ -1,6 +1,6 @@
 # Task 020: Home Page — Backend
 
-> **GitHub Issue:** [#31](https://github.com/andrew-rubio/blend-app/issues/31)
+> **GitHub Issue:** [#19](https://github.com/andrew-rubio/blend-app/issues/19)
 
 ## Description
 

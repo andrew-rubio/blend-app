@@ -1,6 +1,6 @@
 # Task 013: Unified Recipe Search — Backend
 
-> **GitHub Issue:** [#24](https://github.com/andrew-rubio/blend-app/issues/24)
+> **GitHub Issue:** [#12](https://github.com/andrew-rubio/blend-app/issues/12)
 
 ## Description
 

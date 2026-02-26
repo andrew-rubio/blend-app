@@ -1,6 +1,6 @@
 # Task 010: User Preferences — Backend
 
-> **GitHub Issue:** [#21](https://github.com/andrew-rubio/blend-app/issues/21)
+> **GitHub Issue:** [#9](https://github.com/andrew-rubio/blend-app/issues/9)
 
 ## Description
 

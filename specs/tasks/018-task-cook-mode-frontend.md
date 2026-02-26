@@ -1,6 +1,6 @@
 # Task 018: Cook Mode Workspace — Frontend
 
-> **GitHub Issue:** [#29](https://github.com/andrew-rubio/blend-app/issues/29)
+> **GitHub Issue:** [#17](https://github.com/andrew-rubio/blend-app/issues/17)
 
 ## Description
 

@@ -1,6 +1,6 @@
 # Task 012: Recipe Data Model and CRUD — Backend
 
-> **GitHub Issue:** [#23](https://github.com/andrew-rubio/blend-app/issues/23)
+> **GitHub Issue:** [#11](https://github.com/andrew-rubio/blend-app/issues/11)
 
 ## Description
 

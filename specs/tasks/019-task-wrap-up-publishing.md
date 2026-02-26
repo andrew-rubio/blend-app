@@ -1,6 +1,6 @@
 # Task 019: Post-Cook Wrap-Up and Recipe Publishing
 
-> **GitHub Issue:** [#30](https://github.com/andrew-rubio/blend-app/issues/30)
+> **GitHub Issue:** [#18](https://github.com/andrew-rubio/blend-app/issues/18)
 
 ## Description
 

@@ -1,6 +1,6 @@
 # Task 014: Explore and Search — Frontend
 
-> **GitHub Issue:** [#25](https://github.com/andrew-rubio/blend-app/issues/25)
+> **GitHub Issue:** [#13](https://github.com/andrew-rubio/blend-app/issues/13)
 
 ## Description
 
