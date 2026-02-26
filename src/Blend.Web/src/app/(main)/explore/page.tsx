@@ -23,9 +23,10 @@ export default function ExplorePage() {
     cuisines: searchParams.get('cuisines')?.split(',').filter(Boolean) ?? [],
     diets: searchParams.get('diets')?.split(',').filter(Boolean) ?? [],
     dishTypes: searchParams.get('dishTypes')?.split(',').filter(Boolean) ?? [],
-    maxReadyTime: searchParams.get('maxReadyTime')
-      ? Number(searchParams.get('maxReadyTime'))
-      : undefined,
+    maxReadyTime: (() => {
+      const parsed = Number(searchParams.get('maxReadyTime'));
+      return searchParams.get('maxReadyTime') && !isNaN(parsed) ? parsed : undefined;
+    })(),
   }));
 
   const [inputValue, setInputValue] = useState(initParams.q);
