@@ -1,0 +1,65 @@
+services:
+  blend-api:
+    build:
+      context: ./src/Blend.Api
+      dockerfile: Dockerfile
+    container_name: blend-api
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - CosmosDb__ConnectionString=${COSMOS_DB_CONNECTION_STRING:-AccountEndpoint=https://cosmosdb-emulator:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMzsKvzGQuj6Lp8Wg==}
+      - CosmosDb__DatabaseName=${COSMOS_DB_DATABASE:-BlendDev}
+      - Spoonacular__ApiKey=${SPOONACULAR_API_KEY:-}
+      - AzureAd__TenantId=${AZURE_AD_TENANT_ID:-}
+      - AzureAd__ClientId=${AZURE_AD_CLIENT_ID:-}
+    depends_on:
+      cosmosdb-emulator:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - blend-network
+
+  blend-web:
+    build:
+      context: ./src/Blend.Web
+      dockerfile: Dockerfile
+    container_name: blend-web
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://blend-api:8080
+    depends_on:
+      blend-api:
+        condition: service_healthy
+    networks:
+      - blend-network
+
+  cosmosdb-emulator:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest
+    container_name: blend-cosmosdb
+    ports:
+      - "8081:8081"
+      - "10251-10255:10251-10255"
+    environment:
+      - AZURE_COSMOS_EMULATOR_PARTITION_COUNT=10
+      - AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE=false
+    healthcheck:
+      test: ["CMD", "curl", "-f", "--insecure", "https://localhost:8081/_explorer/emulator.pem"]
+      interval: 30s
+      timeout: 20s
+      retries: 10
+      start_period: 60s
+    networks:
+      - blend-network
+
+networks:
+  blend-network:
+    driver: bridge

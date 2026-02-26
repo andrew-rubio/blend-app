@@ -1,0 +1,24 @@
+**/.dockerignore
+**/.env
+**/.git
+**/.gitignore
+**/.vs
+**/.vscode
+**/*.[Oo]bj
+**/*.trx
+**/*.user
+**/bin
+**/obj
+**/out
+**/*.suo
+**/node_modules
+**/npm-debug.log
+**/TestResults
+# Frontend build output
+src/Blend.Web/.next
+src/Blend.Web/node_modules
+src/Blend.Web/out
+# Docs
+docs/site
+# Infra
+infra/.azure

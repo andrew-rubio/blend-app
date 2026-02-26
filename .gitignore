@@ -5,5 +5,31 @@ apm_modules/
 AGENTS.md
 .apm
 
+# Environment files (never commit secrets)
+.env
+.env.local
+.env.*.local
+src/Blend.Api/.env
+src/Blend.Web/.env.local
+
+# .NET build output
+**/bin/
+**/obj/
+**/TestResults/
+*.user
+
+# Node.js
+node_modules/
+src/Blend.Web/.next/
+src/Blend.Web/out/
+src/Blend.Web/coverage/
+
+# MkDocs build
+site/
+
+# Azure deployment artifacts
+infra/.azure/
+
+
 # MkDocs build output
 site/
