@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Blend.Api.Configuration;
 using Blend.Api.Domain;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -12,8 +13,13 @@ namespace Blend.Api.Services;
 public class JwtTokenService : ITokenService
 {
     private readonly JwtSettings _settings;
+    private readonly ILogger<JwtTokenService> _logger;
 
-    public JwtTokenService(IOptions<JwtSettings> settings) => _settings = settings.Value;
+    public JwtTokenService(IOptions<JwtSettings> settings, ILogger<JwtTokenService> logger)
+    {
+        _settings = settings.Value;
+        _logger = logger;
+    }
 
     public string GenerateAccessToken(BlendUser user, IList<string> roles)
     {
@@ -67,6 +73,10 @@ public class JwtTokenService : ITokenService
             }, out _);
             return principal;
         }
-        catch { return null; }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Token validation failed");
+            return null;
+        }
     }
 }

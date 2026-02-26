@@ -22,6 +22,7 @@ public class AuthController : ControllerBase
     private readonly ITokenService _tokenService;
     private readonly IEmailService _emailService;
     private readonly JwtSettings _jwtSettings;
+    private readonly ILogger<AuthController> _logger;
     private const string RefreshTokenCookieName = "blend_refresh_token";
 
     public AuthController(
@@ -29,13 +30,15 @@ public class AuthController : ControllerBase
         SignInManager<BlendUser> signInManager,
         ITokenService tokenService,
         IEmailService emailService,
-        IOptions<JwtSettings> jwtSettings)
+        IOptions<JwtSettings> jwtSettings,
+        ILogger<AuthController> logger)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _tokenService = tokenService;
         _emailService = emailService;
         _jwtSettings = jwtSettings.Value;
+        _logger = logger;
     }
 
     [HttpPost("register")]
@@ -264,7 +267,7 @@ public class AuthController : ControllerBase
         });
     }
 
-    private static string? ExtractUserIdFromCookie(string cookieValue)
+    private string? ExtractUserIdFromCookie(string cookieValue)
     {
         try
         {
@@ -272,7 +275,11 @@ public class AuthController : ControllerBase
             var colonIdx = decoded.IndexOf(':');
             return colonIdx > 0 ? decoded[..colonIdx] : null;
         }
-        catch { return null; }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed to parse refresh token cookie");
+            return null;
+        }
     }
 
     private static string HashToken(string token)

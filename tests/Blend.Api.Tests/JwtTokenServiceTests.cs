@@ -22,7 +22,7 @@ public class JwtTokenServiceTests
     };
 
     public JwtTokenServiceTests() =>
-        _service = new JwtTokenService(Options.Create(_settings));
+        _service = new JwtTokenService(Options.Create(_settings), Microsoft.Extensions.Logging.Abstractions.NullLogger<JwtTokenService>.Instance);
 
     [Fact]
     public void GenerateAccessToken_ReturnsValidJwt()
