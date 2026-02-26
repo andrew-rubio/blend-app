@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="../tests/Blend.Tests.Integration/Blend.Tests.Integration.csproj" />
+  <Project Path="../tests/Blend.Tests.Unit/Blend.Tests.Unit.csproj" />
+  <Project Path="Blend.Api/Blend.Api.csproj" />
+  <Project Path="Blend.Domain/Blend.Domain.csproj" />
+  <Project Path="Blend.Infrastructure/Blend.Infrastructure.csproj" />
+</Solution>
