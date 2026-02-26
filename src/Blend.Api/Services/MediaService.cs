@@ -92,8 +92,12 @@ public class MediaService : IMediaService
             "content" => $"content/{entityId}",
             _         => throw new ArgumentException($"Unknown entity type: {entityType}")
         };
-        // Sanitise fileName: keep only the final file name part
+        // Sanitise fileName: keep only the final segment, then strip anything
+        // that is not alphanumeric, a hyphen, underscore, or the dot before the extension.
         var safeFileName = Path.GetFileName(fileName);
+        safeFileName = System.Text.RegularExpressions.Regex.Replace(safeFileName, @"[^\w.\-]", "_");
+        if (string.IsNullOrEmpty(safeFileName))
+            safeFileName = "upload";
         return $"{folder}/{safeFileName}";
     }
 

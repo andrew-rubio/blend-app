@@ -40,8 +40,8 @@ public class ImageProcessingService : IImageProcessingService
         using var originalStream = await httpClient.GetStreamAsync(originalUrl);
         using var image = await Image.LoadAsync(originalStream);
 
-        var basePath = System.IO.Path.GetDirectoryName(blobPath) ?? "";
-        var fileNameWithoutExt = System.IO.Path.GetFileNameWithoutExtension(blobPath);
+        var basePath = Path.GetDirectoryName(blobPath) ?? "";
+        var fileNameWithoutExt = Path.GetFileNameWithoutExtension(blobPath);
 
         var result = new ProcessedMedia { OriginalPath = blobPath };
 
