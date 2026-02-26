@@ -4,3 +4,6 @@ apm_modules/
 **/AGENTS.md
 AGENTS.md
 .apm
+
+# MkDocs build output
+site/
