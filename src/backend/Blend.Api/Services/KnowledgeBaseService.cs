@@ -19,7 +19,7 @@ public class KnowledgeBaseService : IKnowledgeBaseService
         string? category,
         CancellationToken cancellationToken = default)
     {
-        // TODO: Integrate with Azure AI Search to index the ingredient
+        // TODO: Integrate with Azure AI Search to index the ingredient (task 009-task-media-upload dependency)
         _logger.LogInformation(
             "KB stub: would index ingredient '{Name}' (category: {Category})",
             ingredientName, category ?? "none");

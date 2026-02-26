@@ -14,13 +14,6 @@ namespace Blend.Tests.Integration.Admin;
 [Trait("Category", "Integration")]
 public class AdminIngredientsIntegrationTests : IAsyncLifetime, IDisposable
 {
-    private const string EmulatorKey =
-        "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMssZaR8r/8ZbT1A==";
-
-    private static readonly string EmulatorEndpoint =
-        Environment.GetEnvironmentVariable("COSMOS_EMULATOR_CONNECTION_STRING")
-        ?? $"AccountEndpoint=https://localhost:8081/;AccountKey={EmulatorKey}";
-
     private CosmosClient? _client;
     private IRepository<IngredientSubmission>? _submissionsRepository;
     private readonly string _databaseName = $"blend-test-{Guid.NewGuid():N}";
@@ -28,10 +21,10 @@ public class AdminIngredientsIntegrationTests : IAsyncLifetime, IDisposable
 
     public async Task InitializeAsync()
     {
-        _emulatorAvailable = await IsEmulatorAvailableAsync();
+        _emulatorAvailable = await CosmosEmulatorFixture.IsEmulatorAvailableAsync();
         if (!_emulatorAvailable) return;
 
-        _client = new CosmosClient(EmulatorEndpoint, new CosmosClientOptions
+        _client = new CosmosClient(CosmosEmulatorFixture.EmulatorEndpoint, new CosmosClientOptions
         {
             SerializerOptions = new CosmosSerializationOptions
             {
@@ -141,20 +134,6 @@ public class AdminIngredientsIntegrationTests : IAsyncLifetime, IDisposable
         Assert.All(result.Items, item => Assert.Equal(IngredientSubmissionStatus.Pending, item.SubmissionStatus));
     }
 
-    private static async Task<bool> IsEmulatorAvailableAsync()
-    {
-        try
-        {
-            using var client = new CosmosClient(EmulatorEndpoint, new CosmosClientOptions
-            {
-                MaxRetryAttemptsOnRateLimitedRequests = 0
-            });
-            await client.ReadAccountAsync();
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
+    private static async Task<bool> IsEmulatorAvailableAsync() =>
+        await CosmosEmulatorFixture.IsEmulatorAvailableAsync();
 }

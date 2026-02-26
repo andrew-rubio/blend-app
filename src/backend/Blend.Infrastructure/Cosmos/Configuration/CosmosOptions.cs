@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Blend.Infrastructure.Cosmos.Configuration;
 
 /// <summary>
@@ -7,6 +9,7 @@ public class CosmosOptions
 {
     public const string SectionName = "CosmosDb";
 
+    [Required]
     public string ConnectionString { get; set; } = string.Empty;
 
     public string DatabaseName { get; set; } = "blend";
