@@ -1,0 +1,59 @@
+version: 2
+
+updates:
+  # .NET backend dependencies
+  - package-ecosystem: nuget
+    directory: /src/Blend.Api
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+    groups:
+      aspnetcore:
+        patterns:
+          - "Microsoft.AspNetCore.*"
+          - "Microsoft.Extensions.*"
+      azure-sdk:
+        patterns:
+          - "Azure.*"
+      testing:
+        patterns:
+          - "xunit*"
+          - "Moq*"
+          - "FluentAssertions*"
+          - "Microsoft.NET.Test*"
+    open-pull-requests-limit: 10
+
+  # Frontend npm dependencies
+  - package-ecosystem: npm
+    directory: /src/Blend.Web
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+    groups:
+      react:
+        patterns:
+          - "react"
+          - "react-*"
+          - "@types/react*"
+      next:
+        patterns:
+          - "next"
+          - "next-*"
+      tanstack:
+        patterns:
+          - "@tanstack/*"
+    open-pull-requests-limit: 10
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+    open-pull-requests-limit: 5
