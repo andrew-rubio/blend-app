@@ -31,3 +31,5 @@ site/
 infra/.azure/
 
 
+# MkDocs build output
+site/

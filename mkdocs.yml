@@ -1,0 +1,71 @@
+site_name: Blend
+site_description: AI-powered development workflow — from spec to cloud
+site_url: https://andrew-rubio.github.io/blend-app/
+repo_url: https://github.com/andrew-rubio/blend-app
+repo_name: andrew-rubio/blend-app
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - search.share
+    - content.code.copy
+
+exclude_docs: |
+  README.md
+
+validation:
+  nav:
+    omitted_files: ignore
+
+plugins:
+  - search
+  - git-revision-date-localized:
+      enable_creation_date: true
+      fallback_to_build_date: true
+  - minify:
+      minify_html: true
+
+markdown_extensions:
+  - admonition
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quick-start.md
+    - Configuration: getting-started/configuration.md
+  - Architecture:
+    - Overview: architecture/overview.md
+    - System Design: architecture/system-design.md
+    - Data Flow: architecture/data-flow.md
+  - API:
+    - REST API: api/rest-api.md
+  - Guides:
+    - Development: guides/development.md
+    - Deployment: guides/deployment.md
+    - Troubleshooting: guides/troubleshooting.md
+  - Reference:
+    - Configuration: reference/configuration.md
+    - Environment Variables: reference/environment-variables.md
