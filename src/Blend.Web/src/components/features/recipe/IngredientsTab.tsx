@@ -18,9 +18,8 @@ export function IngredientsTab({ recipe }: Props) {
       </div>
       <ul className="divide-y divide-gray-100">
         {recipe.ingredients.map((ing) => {
-          const scaledAmount = (ing.originalAmount * ratio).toFixed(
-            Number.isInteger(ing.originalAmount * ratio) ? 0 : 1,
-          )
+          const raw = ing.originalAmount * ratio
+          const scaledAmount = raw.toFixed(Number.isInteger(raw) ? 0 : 1)
           return (
             <li key={ing.id} className="flex justify-between py-3 text-sm">
               <span className="text-gray-900">{ing.name}</span>

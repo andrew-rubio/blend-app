@@ -32,7 +32,7 @@ export function RecipeHero({ recipe }: Props) {
               {recipe.author.avatarUrl && (
                 <Image src={recipe.author.avatarUrl} alt={recipe.author.name} width={24} height={24} className="rounded-full" />
               )}
-              <Link href={`/profile/${recipe.author.id}`} className="hover:underline font-medium text-gray-700">
+              <Link href={`/profile/${recipe.author.id}`} className="font-medium text-gray-700 hover:underline">
                 {recipe.author.name}
               </Link>
             </>
