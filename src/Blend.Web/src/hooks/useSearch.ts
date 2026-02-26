@@ -11,12 +11,12 @@ interface UseSearchRecipesParams {
 }
 
 export function useSearchRecipes({ query, filters, enabled = true }: UseSearchRecipesParams) {
-  return useInfiniteQuery<SearchResponse, Error, { pages: SearchResponse[] }, [string, string, SearchFilters], string | undefined>({
-    queryKey: ['search', query, filters],
-    queryFn: ({ pageParam }) =>
+  return useInfiniteQuery({
+    queryKey: ['search', query, filters] as const,
+    queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
       searchRecipes({ q: query, filters, cursor: pageParam, pageSize: 20 }),
-    initialPageParam: undefined,
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage: SearchResponse) => lastPage.nextCursor ?? undefined,
     enabled: enabled && query.trim().length > 0,
   });
 }

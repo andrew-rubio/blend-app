@@ -25,7 +25,7 @@ export async function searchRecipes(params: SearchParams): Promise<SearchRespons
 
   const response = await fetch(url.toString());
   if (!response.ok) {
-    throw new Error(`Search failed: ${response.statusText}`);
+    throw new Error(`Search failed: ${response.status} ${response.statusText}`);
   }
   return response.json() as Promise<SearchResponse>;
 }
