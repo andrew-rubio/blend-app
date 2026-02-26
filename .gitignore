@@ -7,3 +7,9 @@ AGENTS.md
 
 # MkDocs build output
 site/
+
+# Next.js
+src/Blend.Web/.next/
+src/Blend.Web/node_modules/
+src/Blend.Web/.env.local
+src/Blend.Web/coverage/
