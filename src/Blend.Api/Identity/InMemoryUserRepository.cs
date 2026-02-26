@@ -2,7 +2,7 @@ using Blend.Api.Domain;
 
 namespace Blend.Api.Identity;
 
-public class InMemoryUserRepository : ICosmosUserRepository
+public class InMemoryUserRepository : ICosmosUserRepository, IDisposable
 {
     private readonly List<BlendUser> _users = new();
     private readonly SemaphoreSlim _lock = new(1, 1);
@@ -59,4 +59,6 @@ public class InMemoryUserRepository : ICosmosUserRepository
         try { _users.RemoveAll(u => u.Id == userId); }
         finally { _lock.Release(); }
     }
+
+    public void Dispose() => _lock.Dispose();
 }

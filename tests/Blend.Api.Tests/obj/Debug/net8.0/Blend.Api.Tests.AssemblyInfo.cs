@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Blend.Api.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2faae44ff9095dbe29dd8834d240a396415cf682")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7f05669cb56f32dd81b9719b64b544557292d953")]
 [assembly: System.Reflection.AssemblyProductAttribute("Blend.Api.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Blend.Api.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

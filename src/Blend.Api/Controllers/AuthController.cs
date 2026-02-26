@@ -23,6 +23,7 @@ public class AuthController : ControllerBase
     private readonly IEmailService _emailService;
     private readonly JwtSettings _jwtSettings;
     private readonly ILogger<AuthController> _logger;
+    private readonly IWebHostEnvironment _environment;
     private const string RefreshTokenCookieName = "blend_refresh_token";
 
     public AuthController(
@@ -31,7 +32,8 @@ public class AuthController : ControllerBase
         ITokenService tokenService,
         IEmailService emailService,
         IOptions<JwtSettings> jwtSettings,
-        ILogger<AuthController> logger)
+        ILogger<AuthController> logger,
+        IWebHostEnvironment environment)
     {
         _userManager = userManager;
         _signInManager = signInManager;
@@ -39,6 +41,7 @@ public class AuthController : ControllerBase
         _emailService = emailService;
         _jwtSettings = jwtSettings.Value;
         _logger = logger;
+        _environment = environment;
     }
 
     [HttpPost("register")]
@@ -213,7 +216,7 @@ public class AuthController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Me()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (userId == null) return Unauthorized();
 
         var user = await _userManager.FindByIdAsync(userId);
@@ -245,7 +248,7 @@ public class AuthController : ControllerBase
         Response.Cookies.Append(RefreshTokenCookieName, tokenWithUserId, new CookieOptions
         {
             HttpOnly = true,
-            Secure = Request.IsHttps,
+            Secure = !_environment.IsDevelopment(),
             SameSite = SameSiteMode.Strict,
             Path = "/api/v1/auth",
             MaxAge = TimeSpan.FromDays(_jwtSettings.RefreshTokenExpirationDays)
