@@ -27,12 +27,13 @@ describe('ShareButton', () => {
     })
   })
 
-  it('shows copied feedback after clicking', async () => {
+  it('calls navigator.clipboard.writeText with the current page URL', async () => {
+    const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue()
     const user = userEvent.setup()
     render(<ShareButton />)
     await user.click(screen.getByRole('button', { name: 'Share recipe' }))
     await waitFor(() => {
-      expect(screen.getByText(/Copied!/)).toBeInTheDocument()
+      expect(writeText).toHaveBeenCalledWith('http://localhost/recipes/1')
     })
   })
 })

@@ -30,10 +30,9 @@ describe('ServingAdjuster', () => {
     expect(screen.getByRole('button', { name: 'Decrease servings' })).toBeDisabled()
   })
 
-  it('recalculates ingredient amounts when servings change', async () => {
-    const user = userEvent.setup()
-    // Test the integrated IngredientsTab behavior via state
+  it('updates the displayed count when servings prop changes', () => {
     const { rerender } = render(<ServingAdjuster servings={4} onServingsChange={vi.fn()} />)
+    expect(screen.getByText('4')).toBeInTheDocument()
     rerender(<ServingAdjuster servings={8} onServingsChange={vi.fn()} />)
     expect(screen.getByText('8')).toBeInTheDocument()
   })
