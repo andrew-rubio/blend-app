@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'copilot/**'
+    paths:
+      - 'src/backend/**'
+      - 'src/tests/**'
+      - 'Directory.Build.props'
+      - '.editorconfig'
+  pull_request:
+    paths:
+      - 'src/backend/**'
+      - 'src/tests/**'
+      - 'Directory.Build.props'
+      - '.editorconfig'
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore src/backend/Blend.slnx
+
+      - name: Build solution
+        run: dotnet build src/backend/Blend.slnx --no-restore --configuration Release
+
+      - name: Run unit tests
+        run: dotnet test src/tests/Blend.Tests.Unit/ --no-build --configuration Release --verbosity normal
+
+      - name: Run integration tests
+        run: dotnet test src/tests/Blend.Tests.Integration/ --no-build --configuration Release --verbosity normal
