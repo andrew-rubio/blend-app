@@ -1,6 +1,7 @@
 using Blend.Api.Auth;
 using Blend.Api.Middleware;
 using Blend.Api.Services.Spoonacular;
+using Blend.Infrastructure.BlobStorage;
 using Blend.Infrastructure.Cosmos;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -54,6 +55,17 @@ builder.Services.AddBlendAuthentication(builder.Configuration);
 if (!string.IsNullOrWhiteSpace(builder.Configuration["Spoonacular:ApiKey"]))
 {
     builder.Services.AddSpoonacularServices(builder.Configuration);
+}
+
+// ── Azure Blob Storage & Image Processing ─────────────────────────────────────
+// Register when a connection string is available (Aspire-injected or manual config).
+var blobConnectionString =
+    builder.Configuration.GetConnectionString("blobs")
+    ?? builder.Configuration["AzureBlobStorage:ConnectionString"];
+
+if (!string.IsNullOrWhiteSpace(blobConnectionString))
+{
+    builder.Services.AddBlobStorage(builder.Configuration);
 }
 
 // ── Routing ────────────────────────────────────────────────────────────────────
