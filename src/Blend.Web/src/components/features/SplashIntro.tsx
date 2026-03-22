@@ -144,12 +144,12 @@ export function SplashIntro({ onDismiss }: SplashIntroProps) {
           ) : (
             <div className="flex flex-1 flex-col gap-2">
               <Link href="/register" onClick={handleDismiss} className="block">
-                <Button variant="primary" className="w-full" onClick={() => {}}>
+                <Button variant="primary" className="w-full">
                   Create an account
                 </Button>
               </Link>
               <Link href="/login" onClick={handleDismiss} className="block">
-                <Button variant="outline" className="w-full" onClick={() => {}}>
+                <Button variant="outline" className="w-full">
                   Sign in
                 </Button>
               </Link>

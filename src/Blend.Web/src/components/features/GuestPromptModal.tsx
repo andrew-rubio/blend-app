@@ -37,12 +37,12 @@ export function GuestPromptModal({ isOpen, onClose, message }: GuestPromptModalP
 
         <div className="flex flex-col gap-3">
           <Link href="/register" onClick={onClose} className="block">
-            <Button variant="primary" className="w-full" onClick={() => {}}>
+            <Button variant="primary" className="w-full">
               Create a free account
             </Button>
           </Link>
           <Link href="/login" onClick={onClose} className="block">
-            <Button variant="outline" className="w-full" onClick={() => {}}>
+            <Button variant="outline" className="w-full">
               Sign in
             </Button>
           </Link>
