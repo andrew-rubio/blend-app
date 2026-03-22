@@ -1,3 +1,4 @@
+using Blend.Api.Auth;
 using Blend.Api.Middleware;
 using Blend.Infrastructure.Cosmos;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -44,9 +45,8 @@ if (!string.IsNullOrWhiteSpace(cosmosSection["ConnectionString"])
     builder.Services.AddCosmosDb(builder.Configuration);
 }
 
-// ── Authentication (placeholder) ──────────────────────────────────────────────
-builder.Services.AddAuthentication();
-builder.Services.AddAuthorization();
+// ── Authentication & Authorisation ───────────────────────────────────────────
+builder.Services.AddBlendAuthentication(builder.Configuration);
 
 // ── Routing ────────────────────────────────────────────────────────────────────
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
@@ -63,6 +63,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
