@@ -433,6 +433,8 @@ public sealed class RecipeService : IRecipeService
             partitionKey: userId,
             ct);
 
+        // N+1 cross-partition lookups are acceptable here given typical page sizes (≤50).
+        // A future optimisation could batch recipe IDs into a single IN-clause query.
         var recipes = new List<Recipe>();
         foreach (var activity in activityPage.Items)
         {

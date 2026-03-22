@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Blend.Api.Auth.Models;
 using Blend.Domain.Entities;
 using Blend.Domain.Identity;
@@ -19,6 +20,8 @@ namespace Blend.Tests.Integration;
 
 public sealed class InMemoryRecipeRepository : IRepository<Recipe>
 {
+    private static readonly Regex IdQueryPattern = new(@"c\.id = '([^']+)'", RegexOptions.Compiled);
+
     private readonly ConcurrentDictionary<string, Recipe> _items = new();
 
     public void Seed(Recipe recipe) => _items[recipe.Id] = recipe;
@@ -30,7 +33,7 @@ public sealed class InMemoryRecipeRepository : IRepository<Recipe>
     {
         IEnumerable<Recipe> results = _items.Values;
 
-        var idMatch = System.Text.RegularExpressions.Regex.Match(query, @"c\.id = '([^']+)'");
+        var idMatch = IdQueryPattern.Match(query);
         if (idMatch.Success)
         {
             var id = idMatch.Groups[1].Value;
@@ -140,6 +143,10 @@ public sealed class InMemoryRecipeRepository : IRepository<Recipe>
 
 public sealed class InMemoryActivityRepository : IRepository<Activity>
 {
+    private static readonly Regex IdQueryPattern = new(@"c\.id = '([^']+)'", RegexOptions.Compiled);
+    private static readonly Regex RefIdQueryPattern = new(@"c\.referenceId = '([^']+)'", RegexOptions.Compiled);
+    private static readonly Regex UserIdQueryPattern = new(@"c\.userId = '([^']+)'", RegexOptions.Compiled);
+
     private readonly ConcurrentDictionary<string, Activity> _items = new();
 
     public void Seed(Activity activity) => _items[activity.Id] = activity;
@@ -154,21 +161,21 @@ public sealed class InMemoryActivityRepository : IRepository<Activity>
         if (!string.IsNullOrEmpty(partitionKey))
             results = results.Where(a => a.UserId == partitionKey);
 
-        var idMatch = System.Text.RegularExpressions.Regex.Match(query, @"c\.id = '([^']+)'");
+        var idMatch = IdQueryPattern.Match(query);
         if (idMatch.Success)
         {
             var id = idMatch.Groups[1].Value;
             results = results.Where(a => a.Id == id);
         }
 
-        var refIdMatch = System.Text.RegularExpressions.Regex.Match(query, @"c\.referenceId = '([^']+)'");
+        var refIdMatch = RefIdQueryPattern.Match(query);
         if (refIdMatch.Success)
         {
             var refId = refIdMatch.Groups[1].Value;
             results = results.Where(a => a.ReferenceId == refId);
         }
 
-        var userIdMatch = System.Text.RegularExpressions.Regex.Match(query, @"c\.userId = '([^']+)'");
+        var userIdMatch = UserIdQueryPattern.Match(query);
         if (userIdMatch.Success)
         {
             var userId = userIdMatch.Groups[1].Value;
@@ -222,7 +229,7 @@ public sealed class InMemoryActivityRepository : IRepository<Activity>
         if (query.Contains("c.referenceType = 'Recipe'"))
             results = results.Where(a => a.ReferenceType == "Recipe");
 
-        var userIdMatch = System.Text.RegularExpressions.Regex.Match(query, @"c\.userId = '([^']+)'");
+        var userIdMatch = UserIdQueryPattern.Match(query);
         if (userIdMatch.Success)
         {
             var userId = userIdMatch.Groups[1].Value;
