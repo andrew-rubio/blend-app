@@ -1,0 +1,117 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-backend-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-push:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build-push.outputs.digest }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure Container Registry
+        uses: azure/docker-login@v2
+        with:
+          login-server: ${{ vars.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ vars.ACR_LOGIN_SERVER }}/blend-api
+          tags: |
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        id: build-push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ vars.ACR_LOGIN_SERVER }}/blend-api:buildcache
+          cache-to: type=registry,ref=${{ vars.ACR_LOGIN_SERVER }}/blend-api:buildcache,mode=max
+
+  deploy:
+    name: Deploy to Azure Container Apps
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    permissions:
+      id-token: write
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.app-url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Azure Container Apps
+        id: deploy
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          resourceGroup: ${{ vars.AZURE_RESOURCE_GROUP }}
+          containerAppName: blend-api
+          imageToDeploy: ${{ vars.ACR_LOGIN_SERVER }}/blend-api@${{ needs.build-and-push.outputs.image-digest }}
+          acrName: ${{ vars.ACR_NAME }}
+
+  health-check:
+    name: Post-Deploy Health Check
+    runs-on: ubuntu-latest
+    needs: deploy
+    permissions: {}
+
+    steps:
+      - name: Wait for deployment to stabilise
+        run: sleep 30
+
+      - name: Health check — liveness
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${{ vars.BACKEND_URL }}/healthz")
+          if [ "$status" != "200" ]; then
+            echo "Liveness check failed with status $status"
+            exit 1
+          fi
+          echo "Liveness check passed (HTTP $status)"
+
+      - name: Health check — readiness
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${{ vars.BACKEND_URL }}/ready")
+          if [ "$status" != "200" ]; then
+            echo "Readiness check failed with status $status"
+            exit 1
+          fi
+          echo "Readiness check passed (HTTP $status)"
