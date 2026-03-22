@@ -1,4 +1,5 @@
 using Blend.Api.Middleware;
+using Blend.Infrastructure.Cosmos;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
@@ -33,6 +34,15 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials()));
+
+// ── Cosmos DB ─────────────────────────────────────────────────────────────────
+// Only register when Cosmos DB is configured (connection string or endpoint+key present)
+var cosmosSection = builder.Configuration.GetSection("CosmosDb");
+if (!string.IsNullOrWhiteSpace(cosmosSection["ConnectionString"])
+    || !string.IsNullOrWhiteSpace(cosmosSection["EndpointUri"]))
+{
+    builder.Services.AddCosmosDb(builder.Configuration);
+}
 
 // ── Authentication (placeholder) ──────────────────────────────────────────────
 builder.Services.AddAuthentication();
