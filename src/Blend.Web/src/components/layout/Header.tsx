@@ -1,11 +1,24 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/authStore'
 import { Button } from '@/components/ui/Button'
+import { logoutApi } from '@/lib/api/auth'
 
 export function Header() {
+  const router = useRouter()
   const { isAuthenticated, user, logout } = useAuthStore()
+
+  const handleLogout = async () => {
+    try {
+      await logoutApi()
+    } catch {
+      // proceed with client-side logout even if the API call fails
+    }
+    logout()
+    router.push('/login')
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
@@ -33,7 +46,7 @@ export function Header() {
           {isAuthenticated ? (
             <>
               <span className="text-sm text-gray-600 dark:text-gray-400">{user?.name}</span>
-              <Button variant="outline" size="sm" onClick={logout}>
+              <Button variant="outline" size="sm" onClick={handleLogout}>
                 Sign out
               </Button>
             </>
