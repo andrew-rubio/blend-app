@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <AzureCosmosDisableNewtonsoftJsonCheck>true</AzureCosmosDisableNewtonsoftJsonCheck>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +22,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\backend\Blend.Api\Blend.Api.csproj" />
+    <ProjectReference Include="..\..\backend\Blend.Domain\Blend.Domain.csproj" />
+    <ProjectReference Include="..\..\backend\Blend.Infrastructure\Blend.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

@@ -3,5 +3,7 @@
   <Project Path="../tests/Blend.Tests.Unit/Blend.Tests.Unit.csproj" />
   <Project Path="Blend.Api/Blend.Api.csproj" />
   <Project Path="Blend.AppHost/Blend.AppHost.csproj" />
+  <Project Path="Blend.Domain/Blend.Domain.csproj" />
+  <Project Path="Blend.Infrastructure/Blend.Infrastructure.csproj" />
   <Project Path="Blend.ServiceDefaults/Blend.ServiceDefaults.csproj" />
 </Solution>

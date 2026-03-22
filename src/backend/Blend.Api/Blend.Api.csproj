@@ -4,6 +4,8 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Required when referencing Microsoft.Azure.Cosmos without Newtonsoft.Json -->
+    <AzureCosmosDisableNewtonsoftJsonCheck>true</AzureCosmosDisableNewtonsoftJsonCheck>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Blend.Infrastructure\Blend.Infrastructure.csproj" />
     <ProjectReference Include="..\Blend.ServiceDefaults\Blend.ServiceDefaults.csproj" />
   </ItemGroup>
 
