@@ -1,0 +1,56 @@
+version: 2
+
+updates:
+  # ── .NET / NuGet ─────────────────────────────────────────────────────────────
+  - package-ecosystem: nuget
+    directory: /src/backend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+    open-pull-requests-limit: 10
+    groups:
+      aspnetcore:
+        patterns:
+          - "Microsoft.AspNetCore.*"
+          - "Microsoft.Extensions.*"
+      azure-sdk:
+        patterns:
+          - "Azure.*"
+          - "Microsoft.Azure.*"
+
+  # ── npm (Frontend) ───────────────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /src/Blend.Web
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+    open-pull-requests-limit: 10
+    groups:
+      nextjs:
+        patterns:
+          - "next"
+          - "react"
+          - "react-dom"
+      tanstack:
+        patterns:
+          - "@tanstack/*"
+
+  # ── Docker ───────────────────────────────────────────────────────────────────
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+    open-pull-requests-limit: 5
+
+  # ── GitHub Actions ───────────────────────────────────────────────────────────
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+    open-pull-requests-limit: 10

@@ -1,0 +1,61 @@
+# Blend.Api — Docker build context exclusions
+# ─────────────────────────────────────────────
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE and editor files
+.vs
+.vscode
+.idea
+*.user
+*.suo
+*.rsuser
+
+# Build artifacts
+**/bin/
+**/obj/
+**/publish/
+out/
+
+# Test projects (not needed in API image)
+src/tests/
+
+# Frontend (separate deployment target)
+src/Blend.Web/
+
+# Aspire orchestration host (dev-only)
+src/backend/Blend.AppHost/
+
+# Documentation
+docs/
+specs/
+
+# Local config overrides
+**/*.Development.json
+**/*.Local.json
+**/*.local.json
+**/.env*
+!src/backend/**/.env*
+
+# Docker files themselves
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# CI/CD
+.github/
+
+# Temporary and OS files
+**/__pycache__/
+**/.DS_Store
+**/Thumbs.db
+**/node_modules/
+*.log
+*.tmp
+
+# Scripts and templates
+scripts/
+templates/

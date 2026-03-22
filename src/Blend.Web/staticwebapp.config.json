@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json.schemastore.org/staticwebapp.config.json",
+
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [
+      "/api/*",
+      "/_next/*",
+      "/images/*",
+      "/*.ico",
+      "/*.png",
+      "/*.svg",
+      "/*.webp",
+      "/*.jpg",
+      "/*.jpeg",
+      "/*.gif",
+      "/*.css",
+      "/*.js",
+      "/*.map",
+      "/*.json"
+    ]
+  },
+
+  "routes": [
+    {
+      "route": "/api/*",
+      "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/_next/*",
+      "allowedRoles": ["anonymous"]
+    }
+  ],
+
+  "responseOverrides": {
+    "404": {
+      "rewrite": "/404",
+      "statusCode": 404
+    },
+    "401": {
+      "rewrite": "/401",
+      "statusCode": 401
+    }
+  },
+
+  "globalHeaders": {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "X-XSS-Protection": "1; mode=block",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none'",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains"
+  },
+
+  "mimeTypes": {
+    ".json": "application/json",
+    ".woff": "font/woff",
+    ".woff2": "font/woff2"
+  }
+}
