@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using System.Threading.RateLimiting;
 using Blend.Api.Auth.Services;
 using Blend.Domain.Identity;
@@ -81,6 +83,8 @@ public static class AuthServiceExtensions
         }
 
         // Twitter/X OAuth 2.0 (conditional)
+        // Claims mapping: Twitter v2 API returns { data: { id, name, username } }.
+        // Claims are mapped manually in OnCreatingTicket from the user info API response.
         var twitterClientId = configuration["Authentication:Twitter:ClientId"];
         var twitterClientSecret = configuration["Authentication:Twitter:ClientSecret"];
         if (!string.IsNullOrWhiteSpace(twitterClientId) && !string.IsNullOrWhiteSpace(twitterClientSecret))
@@ -94,6 +98,32 @@ public static class AuthServiceExtensions
                 options.UserInformationEndpoint = "https://api.twitter.com/2/users/me";
                 options.Scope.Add("tweet.read");
                 options.Scope.Add("users.read");
+
+                options.Events.OnCreatingTicket = async ctx =>
+                {
+                    var request = new HttpRequestMessage(HttpMethod.Get, ctx.Options.UserInformationEndpoint);
+                    request.Headers.Authorization =
+                        new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", ctx.AccessToken);
+                    var response = await ctx.Backchannel.SendAsync(request, ctx.HttpContext.RequestAborted);
+                    response.EnsureSuccessStatusCode();
+
+                    using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+                    if (doc.RootElement.TryGetProperty("data", out var data))
+                    {
+                        if (data.TryGetProperty("id", out var id))
+                        {
+                            ctx.Identity?.AddClaim(new Claim(ClaimTypes.NameIdentifier, id.GetString() ?? string.Empty));
+                        }
+                        if (data.TryGetProperty("name", out var name))
+                        {
+                            ctx.Identity?.AddClaim(new Claim(ClaimTypes.Name, name.GetString() ?? string.Empty));
+                        }
+                        if (data.TryGetProperty("email", out var email))
+                        {
+                            ctx.Identity?.AddClaim(new Claim(ClaimTypes.Email, email.GetString() ?? string.Empty));
+                        }
+                    }
+                };
             });
         }
 
