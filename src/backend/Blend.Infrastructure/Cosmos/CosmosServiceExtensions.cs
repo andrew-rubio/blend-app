@@ -1,4 +1,5 @@
 using Blend.Domain.Entities;
+using Blend.Domain.Identity;
 using Blend.Domain.Repositories;
 using Blend.Infrastructure.Cosmos.Configuration;
 using Microsoft.Azure.Cosmos;
@@ -59,6 +60,8 @@ public static class CosmosServiceExtensions
 
         // Register per-container repository instances
         RegisterRepository<DomainUser>(services, "users");
+        // BlendUser is the ASP.NET Core Identity document stored in the same 'users' container.
+        RegisterRepository<BlendUser>(services, "users");
         RegisterRepository<Recipe>(services, "recipes");
         RegisterRepository<Connection>(services, "connections");
         // Activity and CookingSession share the 'activity' container (per ADR 0003 § container definitions)
