@@ -1,62 +1,77 @@
 # Architecture Overview
 
-Blend is built around a multi-agent architecture where specialised GitHub Copilot agents collaborate through structured specification files. Each agent has a defined role, a specific model, and a bounded set of responsibilities.
+Blend is a cloud-native web application for home cooks, built on a modern full-stack architecture. This page provides a high-level overview of the system components and the key architectural decisions that shaped them.
 
-## Component Map
+## System Components
 
 ```
-blend-app/
-├── .github/
-│   ├── agents/          # Agent definitions (chat modes)
-│   └── prompts/         # Workflow prompt files
-├── .devcontainer/       # Dev Container configuration
-├── .vscode/
-│   └── mcp.json         # MCP server configuration
-├── docs/                # This documentation site
-├── specs/               # Generated specification files (per project)
-│   ├── prd.md
-│   ├── features/
-│   └── tasks/
-├── templates/           # Scaffolding templates
-├── scripts/             # Installation scripts
-├── apm.yml              # APM dependency configuration
-└── mkdocs.yml           # Documentation site configuration
+┌─────────────────────────────────────────────────────┐
+│                    Clients                          │
+│         Browser / Mobile Browser                    │
+└──────────────────┬──────────────────────────────────┘
+                   │ HTTPS
+┌──────────────────▼──────────────────────────────────┐
+│           Azure Static Web Apps (SWA)               │
+│              Next.js Frontend                       │
+│   (React, TanStack Query, Zustand, Tailwind CSS)    │
+└──────────────────┬──────────────────────────────────┘
+                   │ REST / JSON (JWT)
+┌──────────────────▼──────────────────────────────────┐
+│         Azure Container Apps                        │
+│         ASP.NET Core .NET 9 Web API                 │
+│      (Blend.Api — Vertical Slice Architecture)      │
+└──────┬─────────────────┬───────────────┬────────────┘
+       │                 │               │
+┌──────▼──────┐  ┌───────▼──────┐  ┌────▼───────────┐
+│ Cosmos DB   │  │ Spoonacular  │  │  Azure Blob     │
+│ (NoSQL)     │  │ API          │  │  Storage        │
+└─────────────┘  └──────────────┘  └────────────────┘
 ```
 
-## Agents
+## Architectural Decision Records
 
-Blend includes eight specialised agents:
+The following ADRs document the key technology choices for Blend:
 
-| Agent | File | Responsibility |
-|---|---|---|
-| PM | `pm.agent.md` | Product requirements, PRDs, FRDs |
-| Dev Lead | `devlead.agent.md` | Technical planning, task breakdown |
-| Developer | `dev.agent.md` | Code implementation |
-| Azure | `azure.agent.md` | Azure deployment, infrastructure |
-| Rev-Eng | `rev-eng.agent.md` | Reverse engineering existing codebases |
-| Modernizer | `modernizer.agent.md` | Modernisation planning |
-| Planner | `planner.agent.md` | Multi-step research and planning |
-| Architect | `architect.agent.md` | Standards, AGENTS.md management |
+### ADR 0001 — Frontend: Next.js
 
-## MCP Servers
+The frontend is built with **Next.js** (React) deployed as an Azure Static Web App. Next.js was selected for its App Router, server-side rendering support, TypeScript integration, and strong ecosystem alignment with the chosen tech stack.
 
-Agents interact with external systems via Model Context Protocol (MCP) servers configured in `.vscode/mcp.json`. These provide agents with real-time access to documentation, repository state, and browser automation.
+See [System Design](system-design.md) for frontend architecture details.
 
-## Specification Files
+### ADR 0002 — Backend: ASP.NET Core .NET 9
 
-All inter-agent communication happens through files in the `specs/` directory:
+The backend API is built with **ASP.NET Core .NET 9**. The `Blend.Api` project follows a vertical slice architecture (feature folders, not layer folders). Minimal APIs are used for simple endpoints; controllers for complex feature areas.
 
-- `specs/prd.md` — Product Requirements Document (created by PM agent)
-- `specs/features/*.md` — Feature Requirements Documents (created by Dev Lead)
-- `specs/tasks/*.md` — Implementation tasks (created by Planner/Dev Lead)
+See [System Design](system-design.md) for backend architecture details.
 
-## Architecture Decision Records (ADRs)
+### ADR 0003 — Database: Azure Cosmos DB
 
-Significant architectural decisions are documented as ADRs in `specs/adr/`. Each ADR follows the standard format:
+**Azure Cosmos DB** (NoSQL) is the primary data store. All entities are stored in a single `blend` database with containers partitioned by entity type (`/contentType`). Cosmos DB was selected for its schema flexibility, global distribution, and native Azure integration.
 
-- **Status**: Proposed / Accepted / Deprecated / Superseded
-- **Context**: The situation requiring a decision
-- **Decision**: What was decided
-- **Consequences**: Trade-offs and implications
+### ADR 0004 — Authentication: ASP.NET Core Identity + JWT
 
-See [System Design](system-design.md) for the technical architecture details and [Data Flow](data-flow.md) for how information moves through the system.
+Authentication and authorisation use **ASP.NET Core Identity** with **JWT bearer tokens**. JWTs are issued by the API and validated on every request. This approach enables stateless authentication suitable for the SPA frontend.
+
+### ADR 0008 — Deployment: Azure Container Apps + Azure Static Web Apps
+
+The backend API is containerised and deployed to **Azure Container Apps** for scalable, serverless container hosting. The Next.js frontend is deployed to **Azure Static Web Apps (SWA)** for global CDN delivery and integrated SWA authentication.
+
+## External Integrations
+
+| Service | Purpose |
+|---|---|
+| Spoonacular API | Recipe search, ingredient data, nutritional information |
+| Azure Blob Storage | User-uploaded recipe images and media |
+| Azure AI Search | Full-text search indexing (planned) |
+
+## Local Development
+
+For local development, [.NET Aspire](https://learn.microsoft.com/en-us/dotnet/aspire/) orchestrates the API, Cosmos DB emulator, and supporting services via the `Blend.AppHost` project.
+
+See the [Installation guide](../getting-started/installation.md) to set up a local development environment.
+
+## Further Reading
+
+- [System Design](system-design.md) — Domain model, data structures, and service interactions
+- [Data Flow](data-flow.md) — Data flow diagrams for key user journeys
+- [Development Guide](../guides/development.md) — Coding standards and branching strategy

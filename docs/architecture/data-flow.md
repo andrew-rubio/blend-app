@@ -1,66 +1,97 @@
 # Data Flow
 
-This page describes how information flows through the Blend system during a typical greenfield development workflow.
+This page describes how data flows through the Blend application for key user journeys.
 
-## Greenfield Workflow Data Flow
+## Recipe Discovery Flow
 
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend (Next.js)
+    participant API (Blend.Api)
+    participant Cache (Cosmos DB)
+    participant Spoonacular
+
+    User->>Frontend (Next.js): Enters search query
+    Frontend (Next.js)->>API (Blend.Api): GET /api/v1/recipes/search?q=pasta
+    API (Blend.Api)->>Cache (Cosmos DB): Check L2 cache
+    alt Cache hit
+        Cache (Cosmos DB)-->>API (Blend.Api): Cached results
+    else Cache miss
+        API (Blend.Api)->>Spoonacular: Search recipes
+        Spoonacular-->>API (Blend.Api): Results
+        API (Blend.Api)->>Cache (Cosmos DB): Store in L2 cache
+    end
+    API (Blend.Api)-->>Frontend (Next.js): Recipe list
+    Frontend (Next.js)-->>User: Displays results
 ```
-User Idea
-    │
-    ▼
-/prd prompt ──► PM Agent ──► specs/prd.md
-                                  │
-                                  ▼
-/frd prompt ──► Dev Lead Agent ──► specs/features/*.md
-                                         │
-                                         ▼
-/plan prompt ──► Planner Agent ──► specs/tasks/*.md
-                                         │
-                                         ▼
-/implement ──► Developer Agent ──► Source Code
-                                         │
-                                         ▼
-/deploy ──► Azure Agent ──► Deployed Application
+
+## Authentication Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend (Next.js)
+    participant Proxy (src/proxy.ts)
+    participant API (Blend.Api)
+
+    User->>Frontend (Next.js): Submits login form
+    Frontend (Next.js)->>API (Blend.Api): POST /api/v1/auth/login
+    API (Blend.Api)-->>Frontend (Next.js): JWT token
+    Frontend (Next.js)->>Frontend (Next.js): Store token in memory
+
+    User->>Proxy (src/proxy.ts): Navigate to protected route
+    Proxy (src/proxy.ts)->>Proxy (src/proxy.ts): Check token validity
+    alt Token valid
+        Proxy (src/proxy.ts)-->>User: Allow access
+    else Token missing or expired
+        Proxy (src/proxy.ts)-->>User: Redirect to /login
+    end
 ```
 
-## Specification File Lifecycle
+## Image Upload Flow
 
-1. **PRD** (`specs/prd.md`) — Created by the PM agent from user input. Treated as the source of truth for product requirements.
-2. **FRDs** (`specs/features/*.md`) — Created by the Dev Lead agent from the PRD. Each FRD describes one feature in implementation-ready detail.
-3. **Tasks** (`specs/tasks/*.md`) — Created by the Planner or Dev Lead from FRDs. Numbered sequentially; each task is a self-contained unit of work for the Developer agent.
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend (Next.js)
+    participant API (Blend.Api)
+    participant Blob Storage
 
-## Agent Communication
-
-Agents do not communicate directly. All coordination happens through files:
-
-- Agents **read** upstream specification files as context
-- Agents **write** output files for downstream agents to consume
-- VS Code's file system and the MCP GitHub server provide shared state
-
-## MCP Data Flow
-
-MCP servers augment agents with real-time external data:
-
-| MCP Server | Data Provided |
-|---|---|
-| `context7` | Library documentation fetched on demand |
-| `github` | Repository file contents, issues, PRs |
-| `microsoft.docs.mcp` | Azure service documentation |
-| `playwright` | Web page content via browser automation |
-| `deepwiki` | Summaries of external GitHub repositories |
-
-## Brownfield Workflow Data Flow
-
+    User->>Frontend (Next.js): Selects image file
+    Frontend (Next.js)->>API (Blend.Api): POST /api/v1/media/upload-url
+    API (Blend.Api)-->>Frontend (Next.js): Pre-signed upload URL
+    Frontend (Next.js)->>Blob Storage: PUT image (direct upload)
+    Blob Storage-->>Frontend (Next.js): 201 Created
+    Frontend (Next.js)->>API (Blend.Api): PATCH /api/v1/recipes/{id} (with image URL)
 ```
-Existing Codebase
-    │
-    ▼
-/rev-eng ──► Rev-Eng Agent ──► specs/prd.md
-                             └► docs/architecture/*.md
-                                         │
-                                         ▼
-/modernize ──► Modernizer Agent ──► specs/modernization-plan.md
-                                              │
-                                              ▼
-/plan ──► Planner Agent ──► specs/tasks/*.md
+
+## Cook Mode Session Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend (Next.js)
+    participant API (Blend.Api)
+
+    User->>Frontend (Next.js): Clicks "Start Cooking"
+    Frontend (Next.js)->>Frontend (Next.js): Initialise Zustand cook mode store
+    Frontend (Next.js)-->>User: Step 1 of N
+
+    loop For each step
+        User->>Frontend (Next.js): Advance to next step
+        Frontend (Next.js)-->>User: Next step + timer
+    end
+
+    User->>Frontend (Next.js): Request substitution
+    Frontend (Next.js)->>API (Blend.Api): GET /api/v1/cook-mode/substitute?ingredient=butter
+    API (Blend.Api)-->>Frontend (Next.js): Substitution suggestions
+    Frontend (Next.js)-->>User: Display substitutions
 ```
+
+## TODO
+
+- Add data flow diagram for the social feed (follow graph, activity aggregation)
+- Add data flow diagram for personalised recommendations
+
+See [System Design](system-design.md) for the domain model and component architecture.

@@ -1,51 +1,62 @@
 # Configuration
 
-Blend is configured through a combination of files at the repository root. This page explains each configuration file and the options available.
+This page describes the environment variables and configuration options for the Blend application.
 
-## `apm.yml`
+## Backend Configuration (`appsettings.json`)
 
-The APM configuration file manages coding standards as versioned dependencies:
+The backend API is configured through `appsettings.json` and environment-specific overrides (`appsettings.Development.json`, etc.).
 
-```yaml
-name: my-app
-version: 1.0.0
-description: My application
+### Cosmos DB
 
-dependencies:
-  apm:
-    - EmeaAppGbb/spec2cloud-guidelines
-    - EmeaAppGbb/spec2cloud-guidelines-backend
-    - EmeaAppGbb/spec2cloud-guidelines-frontend
+```json
+"CosmosDb": {
+  "ConnectionString": "<your-cosmos-db-connection-string>",
+  "DatabaseName": "blend"
+}
 ```
 
-Run `apm install` to pull the latest standards into your project as `AGENTS.md`.
+### Spoonacular API
 
-## `.vscode/mcp.json`
+```json
+"Spoonacular": {
+  "ApiKey": "<your-spoonacular-api-key>",
+  "BaseUrl": "https://api.spoonacular.com"
+}
+```
 
-Configures the Model Context Protocol (MCP) servers available to agents:
+### JWT Authentication
 
-| Server | Purpose |
-|---|---|
-| `context7` | Up-to-date library documentation |
-| `github` | Repository management and operations |
-| `microsoft.docs.mcp` | Official Microsoft/Azure documentation |
-| `playwright` | Browser automation |
-| `deepwiki` | External repository context |
+```json
+"Jwt": {
+  "Issuer": "https://localhost:7000",
+  "Audience": "blend-app",
+  "SecretKey": "<your-jwt-secret-key>"
+}
+```
 
-## `.devcontainer/devcontainer.json`
+### Azure Blob Storage
 
-Defines the development container environment. The default container includes:
+```json
+"BlobStorage": {
+  "ConnectionString": "<your-azure-storage-connection-string>",
+  "ContainerName": "blend-media"
+}
+```
 
-- Python 3.12
-- Azure CLI and Azure Developer CLI (`azd`)
-- TypeScript / Node.js
-- Docker-in-Docker
-- Pre-installed VS Code extensions
+## Frontend Configuration (`.env.local`)
 
-## Environment Variables
+The Next.js frontend reads configuration from `.env.local`:
 
-See the [Environment Variables reference](../reference/environment-variables.md) for all supported variables.
+| Variable | Required | Description |
+|---|---|---|
+| `NEXT_PUBLIC_API_URL` | Yes | Base URL of the Blend API (e.g. `https://localhost:7000`) |
+| `NEXT_PUBLIC_APP_URL` | Yes | Public URL of the frontend app (e.g. `http://localhost:3000`) |
 
-## MkDocs Documentation
+## Local Development
 
-The documentation site is configured in `mkdocs.yml` at the repository root. See the [Configuration reference](../reference/configuration.md) for details.
+For local development, the .NET Aspire AppHost (`Blend.AppHost`) manages service configuration and connection strings automatically. See the [Installation guide](installation.md) for setup instructions.
+
+## Further Reference
+
+- [Environment Variables](../reference/environment-variables.md) — Full list of all environment variables
+- [Configuration Reference](../reference/configuration.md) — Detailed configuration schema reference

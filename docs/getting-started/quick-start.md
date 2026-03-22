@@ -1,75 +1,64 @@
 # Quick Start
 
-Get up and running with Blend in minutes. This guide walks through the most common workflow: building a new application from a product idea.
+Get the Blend application up and running locally in about 5 minutes. This guide assumes you have completed the [Installation](installation.md) steps.
 
 ## Before You Begin
 
-Complete the [Installation](installation.md) steps and ensure you have:
+Ensure you have:
 
-- VS Code open with the Dev Container running
-- GitHub Copilot Chat active
-- An Azure subscription (for deployment steps)
+- Cloned the repository and installed all dependencies (see [Installation](installation.md))
+- The backend and frontend running locally
+- A Spoonacular API key (free tier available at [spoonacular.com/food-api](https://spoonacular.com/food-api))
 
-## Greenfield Workflow (New Application)
+## Step 1: Start the Backend
 
-### Step 1: Define Your Product Idea
+From the repository root, start the .NET Aspire AppHost:
 
-Open Copilot Chat and use the `/prd` prompt to create a Product Requirements Document:
-
-```
-/prd I want to build a task management app for small teams
+```bash
+dotnet run --project src/backend/Blend.AppHost
 ```
 
-The PM agent will ask clarifying questions and produce a structured `specs/prd.md`.
+This starts the API at `https://localhost:7000` and the Aspire dashboard at `https://localhost:15888`.
 
-### Step 2: Break Down Features
+## Step 2: Start the Frontend
 
-Use `/frd` to generate Feature Requirements Documents:
+In a separate terminal:
 
-```
-/frd
-```
-
-The Dev Lead agent reads your PRD and creates detailed FRDs in `specs/features/`.
-
-### Step 3: Create Technical Tasks
-
-Use `/plan` to generate an implementation task breakdown:
-
-```
-/plan
+```bash
+cd src/Blend.Web
+npm run dev
 ```
 
-Tasks are written to `specs/tasks/` with numbered files ready for implementation.
+The frontend is available at `http://localhost:3000`.
 
-### Step 4: Implement Features
+## Step 3: Create an Account
 
-Use `/implement` or `/delegate` to start coding:
+1. Open `http://localhost:3000` in your browser
+2. Click **Sign Up**
+3. Enter your name, email, and password
+4. You are now logged in and can explore the app
 
-```
-/implement specs/tasks/001-task-setup.md
-```
+## Step 4: Discover Recipes
 
-### Step 5: Deploy to Azure
+1. Use the search bar to search for a recipe (e.g. "pasta carbonara")
+2. Filter results by dietary preference, cuisine, or cooking time
+3. Click a recipe to view the full details
 
-Use `/deploy` when your application is ready:
+## Step 5: Try Cook Mode
 
-```
-/deploy
-```
+1. Open any recipe detail page
+2. Click **Start Cooking**
+3. Follow the step-by-step guided cook mode
 
-## Brownfield Workflow (Existing Codebase)
+## Step 6: Set Up Your Taste Profile
 
-If you have an existing codebase, use the reverse-engineering workflow:
+1. Navigate to your profile page
+2. Click **Edit Preferences**
+3. Select your dietary restrictions and favourite cuisines
+4. Your home feed will now show personalised recommendations
 
-```
-/rev-eng
-```
+## What's Next?
 
-The Rev-Eng agent will analyse your code and generate `specs/prd.md` and architecture documentation.
-
-## Next Steps
-
-- [Configuration](configuration.md) — Tailor Blend to your project's needs
-- [Architecture Overview](../architecture/overview.md) — Understand how agents coordinate
-- [Development Guide](../guides/development.md) — Contribute to Blend itself
+- [Configuration](configuration.md) — Configure environment variables and API keys
+- [Development Guide](../guides/development.md) — Start contributing to Blend
+- [Architecture Overview](../architecture/overview.md) — Understand how the system works
