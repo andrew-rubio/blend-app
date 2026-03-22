@@ -152,6 +152,12 @@ public static class AuthServiceExtensions
         services.AddTransient<IEmailService, ConsoleEmailService>();
         services.AddSingleton<IRefreshTokenService, InMemoryRefreshTokenService>();
 
+        // Fallback: register a null IRepository<BlendUser> when Cosmos DB is not configured.
+        // AddCosmosDb (called first in Program.cs when Cosmos is present) registers the real one;
+        // TryAddSingleton is a no-op in that case. Without Cosmos, DI validation still passes but
+        // auth operations will throw NotSupportedException if actually invoked.
+        services.TryAddSingleton<Blend.Domain.Repositories.IRepository<Blend.Domain.Identity.BlendUser>, NullBlendUserRepository>();
+
         return services;
     }
 }
