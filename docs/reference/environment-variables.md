@@ -1,62 +1,64 @@
 # Environment Variables
 
-This page lists all environment variables supported by Blend and the applications it generates.
+This page lists all environment variables used by the Blend application.
 
-## Blend System Variables
+## Backend Environment Variables
 
-| Variable | Required | Description |
-|---|---|---|
-| `GITHUB_TOKEN` | Yes (CI) | GitHub personal access token for API access |
-| `AZURE_SUBSCRIPTION_ID` | Deployment | Azure subscription ID for resource provisioning |
-| `AZURE_TENANT_ID` | Deployment | Azure tenant ID |
-| `AZURE_CLIENT_ID` | Deployment (CI) | Service principal client ID for CI deployments |
-| `AZURE_CLIENT_SECRET` | Deployment (CI) | Service principal client secret for CI deployments |
-
-## MCP Server Variables
+These variables configure the `Blend.Api` ASP.NET Core application. They can be set in `appsettings.Development.json` for local development or as environment variables in Azure Container Apps for production.
 
 | Variable | Required | Description |
 |---|---|---|
-| `GITHUB_PERSONAL_ACCESS_TOKEN` | MCP GitHub | Token for the GitHub MCP server |
+| `CosmosDb__ConnectionString` | Yes | Azure Cosmos DB connection string |
+| `CosmosDb__DatabaseName` | Yes | Cosmos DB database name (default: `blend`) |
+| `Spoonacular__ApiKey` | Yes | Spoonacular API key |
+| `Jwt__Issuer` | Yes | JWT issuer URL |
+| `Jwt__Audience` | Yes | JWT audience identifier |
+| `Jwt__SecretKey` | Yes | JWT HMAC secret key (minimum 32 characters) |
+| `Jwt__ExpiryMinutes` | No | JWT expiry in minutes (default: `60`) |
+| `BlobStorage__ConnectionString` | Yes | Azure Blob Storage connection string |
+| `BlobStorage__ContainerName` | Yes | Blob container name for media uploads |
+| `ASPNETCORE_ENVIRONMENT` | No | Runtime environment: `Development`, `Production` |
 
-## Documentation Variables
+## Frontend Environment Variables
+
+These variables configure the Next.js frontend. Set them in `.env.local` for local development or in the Azure Static Web App configuration for production.
 
 | Variable | Required | Description |
 |---|---|---|
-| `GOOGLE_ANALYTICS_KEY` | No | Google Analytics measurement ID for the docs site |
+| `NEXT_PUBLIC_API_URL` | Yes | Base URL of the Blend API (e.g. `https://localhost:7000`) |
+| `NEXT_PUBLIC_APP_URL` | Yes | Public URL of the frontend app |
+
+## CI/CD Variables (GitHub Actions)
+
+These secrets must be configured in the GitHub repository settings under **Settings → Secrets and variables → Actions**.
+
+| Secret | Used By | Description |
+|---|---|---|
+| `AZURE_CLIENT_ID` | Deployment workflow | Service principal client ID |
+| `AZURE_CLIENT_SECRET` | Deployment workflow | Service principal client secret |
+| `AZURE_SUBSCRIPTION_ID` | Deployment workflow | Azure subscription ID |
+| `AZURE_TENANT_ID` | Deployment workflow | Azure tenant ID |
+
+Note: `GITHUB_TOKEN` is automatically provided by GitHub Actions and does not need to be configured manually.
 
 ## Setting Variables
 
-### Local Development (Dev Container)
+### Local Development
 
-Create a `.env` file at the repository root (excluded from git via `.gitignore`):
+Create `src/backend/Blend.Api/appsettings.Development.json` with required values (this file is excluded from git via `.gitignore`).
+
+Create `src/Blend.Web/.env.local` with required values (also excluded from git).
+
+### Production (Azure)
+
+Use `azd env set` to manage environment-specific values:
 
 ```bash
-GITHUB_TOKEN=ghp_xxxxxxxxxxxx
-AZURE_SUBSCRIPTION_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+azd env set SPOONACULAR__APIKEY <your-api-key>
 ```
 
-Or use the Azure Developer CLI to manage environment-specific values:
+Or set them directly in the Azure Portal for the Container App under **Settings → Environment variables**.
 
-```bash
-azd env set AZURE_SUBSCRIPTION_ID xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-```
+## TODO
 
-### GitHub Actions
-
-Set variables as repository secrets:
-
-1. Go to **Settings** → **Secrets and variables** → **Actions**
-2. Click **New repository secret**
-3. Enter the name and value
-
-### Required Secrets for CI/CD
-
-The following secrets must be set for the GitHub Actions workflows to function:
-
-| Secret | Used By |
-|---|---|
-| `GITHUB_TOKEN` | Automatically provided by GitHub Actions |
-| `AZURE_CLIENT_ID` | Deployment workflow |
-| `AZURE_CLIENT_SECRET` | Deployment workflow |
-| `AZURE_SUBSCRIPTION_ID` | Deployment workflow |
-| `AZURE_TENANT_ID` | Deployment workflow |
+- Document additional environment variables added during feature implementation

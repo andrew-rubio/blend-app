@@ -1,56 +1,104 @@
 # REST API
 
-!!! note
-    The Blend REST API is planned for a future release. This page will be updated when the API is available.
+The Blend REST API provides the backend for the Blend web application. The API is built with ASP.NET Core .NET 9 and follows REST conventions with JSON request/response bodies.
 
-## Planned Endpoints
+!!! note "OpenAPI Specification"
+    The full interactive API specification will be available at `/swagger` when running the application locally. This page provides a high-level reference; the OpenAPI spec is the authoritative source.
 
-The following API endpoints are under consideration for the Blend service layer:
+## Base URL
 
-### Health
-
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/health` | Service health check |
-| `GET` | `/health/ready` | Readiness probe |
-
-### Workflows
-
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/api/v1/workflows/prd` | Trigger PRD generation |
-| `POST` | `/api/v1/workflows/plan` | Trigger task planning |
-| `GET` | `/api/v1/workflows/{id}/status` | Get workflow status |
-
-### Specifications
-
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/api/v1/specs` | List all specification files |
-| `GET` | `/api/v1/specs/{type}` | Get specification by type |
+| Environment | Base URL |
+|---|---|
+| Local development | `https://localhost:7000/api/v1` |
+| Production | `https://<your-container-app>.azurecontainerapps.io/api/v1` |
 
 ## Authentication
 
-The API will use token-based authentication. Include the token in the `Authorization` header:
+All protected endpoints require a JWT bearer token in the `Authorization` header:
 
 ```http
 Authorization: Bearer <token>
 ```
 
+Obtain a token by calling `POST /auth/login` or `POST /auth/register`.
+
+## Endpoints
+
+### Health
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/healthz` | None | Liveness probe |
+| `GET` | `/ready` | None | Readiness probe |
+
+### Authentication
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `POST` | `/auth/register` | None | Register a new user account |
+| `POST` | `/auth/login` | None | Log in and receive a JWT |
+| `POST` | `/auth/refresh` | None | Refresh an expired JWT |
+
+### Recipes
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/recipes/search` | Optional | Search recipes by query, ingredient, or filter |
+| `GET` | `/recipes/{id}` | Optional | Get recipe detail |
+| `POST` | `/recipes` | Required | Create a new recipe |
+| `PUT` | `/recipes/{id}` | Required | Update an existing recipe |
+| `DELETE` | `/recipes/{id}` | Required | Delete a recipe |
+
+### Cook Mode
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/cook-mode/substitute` | Optional | Get ingredient substitution suggestions |
+
+### User Preferences
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/preferences` | Required | Get current user preferences |
+| `PUT` | `/preferences` | Required | Update user preferences |
+
+### Profile
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/profile/{userId}` | Optional | Get a user's public profile |
+| `PUT` | `/profile` | Required | Update the authenticated user's profile |
+
+### Social
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `POST` | `/social/follow/{userId}` | Required | Follow a user |
+| `DELETE` | `/social/follow/{userId}` | Required | Unfollow a user |
+| `GET` | `/social/feed` | Required | Get the authenticated user's social feed |
+
+### Media
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `POST` | `/media/upload-url` | Required | Get a pre-signed upload URL for Azure Blob Storage |
+
 ## Error Responses
 
-All error responses follow this format:
+All error responses follow [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9457) format:
 
 ```json
 {
-  "error": {
-    "code": "NOT_FOUND",
-    "message": "The requested resource was not found.",
-    "details": {}
-  }
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+  "title": "Not Found",
+  "status": 404,
+  "detail": "Recipe with ID 'abc123' was not found.",
+  "traceId": "00-abc123..."
 }
 ```
 
-## Contributing
+## TODO
 
-If you'd like to contribute to the API design, open an issue on the [GitHub repository](https://github.com/andrew-rubio/blend-app/issues).
+- Link to the generated OpenAPI spec once available
+- Document pagination parameters for list endpoints
+- Document rate limiting behaviour

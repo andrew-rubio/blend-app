@@ -1,73 +1,66 @@
 # Deployment Guide
 
-This guide covers deploying your application to Azure using the Blend deployment workflow.
+This guide covers deploying the Blend application to Azure using Azure Container Apps (backend API) and Azure Static Web Apps (frontend).
+
+## Architecture
+
+| Component | Azure Service |
+|---|---|
+| Backend API (`Blend.Api`) | Azure Container Apps |
+| Frontend (`Blend.Web`) | Azure Static Web Apps (SWA) |
+| Database | Azure Cosmos DB |
+| Media Storage | Azure Blob Storage |
 
 ## Prerequisites
 
 - Azure subscription
-- Azure Developer CLI (`azd`) installed (included in the Dev Container)
-- Azure CLI (`az`) installed (included in the Dev Container)
+- Azure CLI (`az`) — included in the Dev Container
+- Azure Developer CLI (`azd`) — included in the Dev Container
+- Docker Desktop (for building container images)
 
-## Deploying with the `/deploy` Workflow
+## Initial Deployment
 
-The simplest way to deploy is through the Blend deployment prompt:
-
-```
-/deploy
-```
-
-The Azure agent will:
-
-1. Identify your application type and infrastructure requirements
-2. Generate or update `azure.yaml` and `infra/` Bicep templates
-3. Run `azd up` to provision resources and deploy the application
-
-## Manual Deployment
-
-### Step 1: Initialise Azure Developer CLI
+### Step 1: Log in to Azure
 
 ```bash
-azd init
-```
-
-### Step 2: Log in to Azure
-
-```bash
+az login
 azd auth login
 ```
 
-### Step 3: Provision Infrastructure
+### Step 2: Provision Azure resources
 
 ```bash
 azd provision
 ```
 
-### Step 4: Deploy the Application
+This creates all required Azure resources (Container Apps environment, Cosmos DB, Blob Storage, SWA) using the Bicep templates in `infra/`.
+
+### Step 3: Deploy the application
 
 ```bash
 azd deploy
 ```
 
-### Step 5: View Deployment Status
+### Step 4: Configure environment variables
+
+After provisioning, set any secrets that are not managed by `azd`:
 
 ```bash
-azd show
-```
-
-## Environment Configuration
-
-Before deploying, ensure your environment variables are set. See [Environment Variables](../reference/environment-variables.md) for the full list.
-
-```bash
-azd env set MY_VARIABLE my-value
+azd env set SPOONACULAR_API_KEY <your-api-key>
 ```
 
 ## CI/CD Deployment
 
-Blend includes a GitHub Actions workflow for automated deployment. To enable it:
+The repository includes GitHub Actions workflows for automated deployment. See `.github/workflows/` for the deployment workflow configuration.
 
-1. Configure the required secrets in your GitHub repository settings
-2. Push to the `main` branch to trigger a deployment
+Required GitHub repository secrets:
+
+| Secret | Description |
+|---|---|
+| `AZURE_CLIENT_ID` | Service principal client ID |
+| `AZURE_CLIENT_SECRET` | Service principal client secret |
+| `AZURE_SUBSCRIPTION_ID` | Azure subscription ID |
+| `AZURE_TENANT_ID` | Azure tenant ID |
 
 ## Rollback
 
@@ -76,6 +69,14 @@ To roll back to a previous deployment:
 ```bash
 azd deploy --from-package <previous-package-path>
 ```
+
+Or use the Azure Portal to revert to a previous Container Apps revision.
+
+## TODO
+
+- Document Bicep infrastructure templates once `infra/` scaffolding is complete
+- Add zero-downtime deployment strategy details
+- Document environment-specific configuration management
 
 ## Troubleshooting
 

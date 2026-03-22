@@ -1,63 +1,53 @@
 # Troubleshooting
 
-This page covers common issues and how to resolve them.
+This page covers common issues encountered when developing or running the Blend application and how to resolve them.
 
-## Dev Container Issues
+## Local Development Issues
 
-### Dev Container fails to build
+### Backend fails to start
 
-**Symptom:** VS Code shows an error when reopening in the container.
-
-**Solutions:**
-
-1. Ensure Docker Desktop is running
-2. Check available disk space (at least 10 GB recommended)
-3. Try rebuilding the container: **Command Palette** → `Dev Containers: Rebuild Container`
-4. Check the Dev Container logs for specific errors
-
-### Extensions not loading
-
-**Symptom:** GitHub Copilot Chat or other extensions are not available inside the container.
-
-**Solution:** Rebuild the container to reinstall extensions:
-
-```
-Dev Containers: Rebuild Container Without Cache
-```
-
-## Copilot Agent Issues
-
-### Agent not responding
-
-**Symptom:** `@agent-name` does not trigger a response or shows an error.
+**Symptom:** `dotnet run --project src/backend/Blend.AppHost` fails with an error.
 
 **Solutions:**
 
-1. Ensure GitHub Copilot Chat is signed in and active
-2. Check that the `.github/agents/` directory contains the agent file
-3. Reload VS Code: `Ctrl+Shift+P` → `Developer: Reload Window`
+1. Ensure the .NET 9 SDK is installed: `dotnet --version`
+2. Ensure Docker Desktop is running (required for the Cosmos DB emulator)
+3. Run `dotnet restore src/backend/Blend.slnx` to restore NuGet packages
+4. Check `src/backend/Blend.Api/appsettings.Development.json` exists and has valid configuration
 
-### Agent produces incomplete output
+### Frontend fails to start
 
-**Symptom:** The agent stops mid-response or produces truncated files.
-
-**Solutions:**
-
-1. Break your request into smaller pieces
-2. Ask the agent to continue: "Please continue from where you left off"
-3. Check that the model context window has not been exceeded
-
-## MCP Server Issues
-
-### MCP server not connecting
-
-**Symptom:** Agents report they cannot access external documentation or tools.
+**Symptom:** `npm run dev` fails or the browser shows an error.
 
 **Solutions:**
 
-1. Check `.vscode/mcp.json` for correct server configuration
-2. Restart VS Code to re-initialise MCP connections
-3. Check network connectivity from inside the Dev Container
+1. Ensure Node.js 20+ is installed: `node --version`
+2. Run `npm install` in `src/Blend.Web/` to install dependencies
+3. Check that `src/Blend.Web/.env.local` exists with `NEXT_PUBLIC_API_URL` set
+
+### Cosmos DB connection errors
+
+**Symptom:** API returns 500 errors with a Cosmos DB connection message.
+
+**Solutions:**
+
+1. Ensure the Cosmos DB emulator is running (started automatically by .NET Aspire AppHost)
+2. Check the connection string in `appsettings.Development.json`
+3. The integration tests will skip automatically if the emulator is not running
+
+## Authentication Issues
+
+### JWT token expired
+
+**Symptom:** API returns `401 Unauthorized` after some time.
+
+**Solution:** The frontend should automatically refresh the token. If not, log out and log back in.
+
+### Cannot register a new account
+
+**Symptom:** Registration returns a validation error.
+
+**Solution:** Ensure the password meets the requirements (minimum 8 characters, at least one uppercase, one number, one special character).
 
 ## Documentation Build Issues
 
@@ -67,15 +57,9 @@ Dev Containers: Rebuild Container Without Cache
 
 **Solutions:**
 
-1. Check for broken internal links — all `[text](path.md)` links must resolve
+1. Check for broken internal links — all `[text](path.md)` links must resolve to existing files
 2. Check for malformed Markdown (unclosed admonitions, invalid fences)
 3. Run `mkdocs serve` for live preview to identify issues interactively
-
-### `mkdocs serve` shows 404 for pages
-
-**Symptom:** A page exists in `docs/` but returns 404 in the dev server.
-
-**Solution:** Ensure the page is listed in the `nav:` section of `mkdocs.yml`.
 
 ## Azure Deployment Issues
 

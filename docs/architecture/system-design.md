@@ -1,45 +1,93 @@
 # System Design
 
-This page describes the technical design of the Blend system, including the Dev Container environment, agent configuration, and tooling integrations.
+This page describes the detailed technical design of the Blend application, including the domain model, data structures, and service interactions.
 
-## Development Environment
+## Domain Model
 
-The `.devcontainer/` folder provides a ready-to-use Docker-based development environment. Opening the repository in VS Code triggers the Dev Container, which installs all required tools automatically.
+The core domain entities in Blend are:
 
-### Included Tooling
+| Entity | Description |
+|---|---|
+| `User` | Registered user with profile, preferences, and authentication credentials |
+| `Recipe` | A recipe with ingredients, steps, nutritional info, and metadata |
+| `UserPreferences` | Dietary restrictions, favourite cuisines, and taste profile |
+| `RecipeCollection` | User-curated collections of saved recipes |
+| `Post` | Community content shared by users (recipes, photos, tips) |
+| `Follow` | Directed follow relationship between users |
+| `Notification` | In-app notification for social events |
 
-| Tool | Version | Purpose |
+## Data Storage
+
+All entities are persisted in **Azure Cosmos DB** using a single `blend` database. Containers are partitioned by `contentType`:
+
+| Container | Partition Key | Entities |
 |---|---|---|
-| Python | 3.12 | Scripting, MkDocs, APM CLI |
-| Azure CLI | Latest | Azure resource management |
-| Azure Developer CLI (`azd`) | Latest | Application deployment |
-| Node.js / TypeScript | LTS | Frontend and tooling |
-| Docker-in-Docker | Latest | Container builds inside the Dev Container |
+| `content` | `/contentType` | Recipes, Posts, Editorial content |
+| `users` | `/id` | User profiles and preferences |
+| `cache` | `/cacheKey` | API response cache (Spoonacular) |
 
-### VS Code Extensions
+## Backend Architecture
 
-The Dev Container pre-installs:
+The backend (`Blend.Api`) follows a **vertical slice architecture**. Each feature area has its own folder containing the request/response models, handler, and any feature-specific services:
 
-- GitHub Copilot Chat
-- Azure Tools Pack
-- AI Studio extension
+```
+Blend.Api/
+├── Features/
+│   ├── Auth/           # Registration, login, JWT issuance
+│   ├── Recipes/        # Recipe CRUD, search, detail
+│   ├── CookMode/       # Cook mode sessions, substitutions
+│   ├── Preferences/    # User preference management
+│   ├── Social/         # Follow, feed, notifications
+│   └── Admin/          # Editorial content management
+├── Infrastructure/     # Cosmos DB, Blob Storage, Spoonacular client
+└── Middleware/         # Auth, exception handling, logging
+```
 
-## Agent Architecture
+## Frontend Architecture
 
-Each agent is defined as a `.agent.md` file in `.github/agents/`. The file specifies:
+The frontend (`src/Blend.Web`) is a **Next.js App Router** application:
 
-- **Model** — The underlying LLM (e.g., `o3-mini`, `gpt-4o`)
-- **Tools** — Permitted tool access (file editing, web search, etc.)
-- **Instructions** — Detailed behavioural guidance
+```
+src/Blend.Web/
+├── app/
+│   ├── (auth)/         # Login and registration pages
+│   ├── (app)/          # Authenticated app shell
+│   │   ├── explore/    # Recipe search and discovery
+│   │   ├── recipe/     # Recipe detail and cook mode
+│   │   ├── profile/    # User profile pages
+│   │   └── settings/   # Account and preference settings
+├── components/         # Shared UI components
+├── lib/                # API client, utilities
+├── hooks/              # Custom React hooks (TanStack Query)
+├── stores/             # Zustand state stores
+└── types/              # TypeScript type definitions
+```
 
-Agents are invoked via prompt files (`.github/prompts/*.prompt.md`) or directly through Copilot Chat using `@agent-name` syntax.
+State management uses **TanStack Query** for server state (API data) and **Zustand** for client state (UI state, cook mode session).
 
-## Standards Management (APM)
+## Authentication Flow
 
-Coding standards are managed as versioned APM dependencies declared in `apm.yml`. Running `apm install` fetches the latest standards and generates an `AGENTS.md` file that all agents read automatically.
+1. User submits credentials to `POST /api/v1/auth/login`
+2. API validates against ASP.NET Core Identity and issues a JWT
+3. Frontend stores the JWT in memory (not localStorage) and attaches it to all API requests via an Axios interceptor
+4. Protected routes are guarded by the Next.js proxy (`src/proxy.ts`)
 
-This ensures standards updates propagate consistently across projects without manual copy-paste.
+## External Service Integrations
 
-## Documentation System
+### Spoonacular API
 
-The documentation site (this site) is built with [MkDocs](https://www.mkdocs.org/) and the [Material theme](https://squidfunk.github.io/mkdocs-material/). It is automatically deployed to GitHub Pages via the `.github/workflows/docs.yml` CI workflow on every push to `main`.
+- Recipe search, ingredient data, and nutritional information are sourced from the Spoonacular API
+- Responses are cached using a two-tier cache: in-memory (L1) and Cosmos DB (L2)
+- Cache TTLs: search results (1 h / 24 h), recipe detail (2 h / 7 d), substitutions (4 h / 30 d)
+
+### Azure Blob Storage
+
+- User-uploaded recipe images are stored in Azure Blob Storage
+- Uploaded via pre-signed URLs generated by the API
+
+## TODO
+
+- Document the OpenAPI specification once feature implementation is complete
+- Add sequence diagrams for key user journeys
+
+See [Data Flow](data-flow.md) for data flow diagrams and [Architecture Overview](overview.md) for the high-level component map.

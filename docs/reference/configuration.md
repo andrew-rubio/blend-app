@@ -1,60 +1,66 @@
 # Configuration Reference
 
-This page documents all configuration files used by Blend.
+This page provides a detailed reference for all configuration files used in the Blend application.
 
-## `mkdocs.yml`
+## Backend: `appsettings.json`
 
-Controls the documentation site. Key settings:
+Located at `src/backend/Blend.Api/appsettings.json`. Override with environment-specific files:
 
-| Key | Description | Default |
-|---|---|---|
-| `site_name` | Site title displayed in the header | `Blend` |
-| `site_url` | Canonical URL for the deployed site | — |
-| `repo_url` | Link to the GitHub repository | — |
-| `theme.name` | MkDocs theme | `material` |
-| `plugins` | Enabled MkDocs plugins | `search`, `git-revision-date-localized`, `minify` |
+- `appsettings.Development.json` — local development overrides
+- `appsettings.Production.json` — production overrides (managed via Azure App Configuration or environment variables)
 
-### Plugins
+### `CosmosDb` section
 
-| Plugin | Purpose |
-|---|---|
-| `search` | Full-text search |
-| `git-revision-date-localized` | Shows last-edited date on each page |
-| `minify` | Minifies HTML output for production |
+| Key | Type | Required | Description |
+|---|---|---|---|
+| `ConnectionString` | string | Yes | Azure Cosmos DB connection string |
+| `DatabaseName` | string | Yes | Cosmos DB database name (default: `blend`) |
 
-### Extensions
+### `Spoonacular` section
 
-| Extension | Purpose |
-|---|---|
-| `admonition` | Note, warning, tip, danger callout blocks |
-| `pymdownx.superfences` | Nested fenced code blocks |
-| `pymdownx.tabbed` | Tabbed content blocks |
-| `pymdownx.highlight` | Syntax highlighting with line numbers |
-| `tables` | Markdown tables |
-| `toc` | Table of contents with permalink anchors |
+| Key | Type | Required | Description |
+|---|---|---|---|
+| `ApiKey` | string | Yes | Spoonacular API key |
+| `BaseUrl` | string | No | Base URL (default: `https://api.spoonacular.com`) |
 
-## `apm.yml`
+### `Jwt` section
 
-Manages coding standards as versioned APM dependencies.
+| Key | Type | Required | Description |
+|---|---|---|---|
+| `Issuer` | string | Yes | JWT issuer URL |
+| `Audience` | string | Yes | JWT audience identifier |
+| `SecretKey` | string | Yes | HMAC secret key (minimum 32 characters) |
+| `ExpiryMinutes` | int | No | Token expiry in minutes (default: `60`) |
+
+### `BlobStorage` section
+
+| Key | Type | Required | Description |
+|---|---|---|---|
+| `ConnectionString` | string | Yes | Azure Blob Storage connection string |
+| `ContainerName` | string | Yes | Container name for media uploads |
+
+## Frontend: `.env.local`
+
+Located at `src/Blend.Web/.env.local` (not committed to source control).
+
+| Variable | Type | Required | Description |
+|---|---|---|---|
+| `NEXT_PUBLIC_API_URL` | string | Yes | Base URL of the Blend API |
+| `NEXT_PUBLIC_APP_URL` | string | Yes | Public URL of the frontend |
+
+## MkDocs: `mkdocs.yml`
+
+Located at the repository root. Controls the documentation site build.
 
 | Key | Description |
 |---|---|
-| `name` | Project name |
-| `version` | Project version |
-| `dependencies.apm` | List of APM standard packages to install |
-| `scripts` | Shortcut commands runnable with `apm run <name>` |
+| `site_name` | Site title |
+| `site_url` | Canonical URL for the deployed docs site |
+| `theme.name` | MkDocs theme (must be `material`) |
+| `plugins` | Enabled plugins: `search`, `git-revision-date-localized`, `minify` |
+| `nav` | Documentation navigation structure |
 
-## `.vscode/mcp.json`
+## TODO
 
-Configures MCP servers for agent tool access. Each server entry specifies a `command` and `args` for launching the server process.
-
-## `.devcontainer/devcontainer.json`
-
-Standard Dev Container configuration. Key fields:
-
-| Field | Description |
-|---|---|
-| `image` | Base Docker image |
-| `features` | Dev Container features to install |
-| `customizations.vscode.extensions` | VS Code extensions to pre-install |
-| `postCreateCommand` | Script run after container creation |
+- Document Azure App Configuration keys once infrastructure is provisioned
+- Document all feature flag names once feature flags are implemented
