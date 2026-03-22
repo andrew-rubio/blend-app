@@ -106,9 +106,17 @@ public sealed class AuthController : ControllerBase
 
     [HttpPost("login/{provider}")]
     [ProducesResponseType(StatusCodes.Status302Found)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public IActionResult ExternalLogin([FromRoute] string provider)
     {
         var redirectUri = Url.Action(nameof(ExternalLoginCallback), "Auth", new { provider });
+        if (string.IsNullOrWhiteSpace(redirectUri))
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Configuration error",
+                detail: "Could not build redirect URI for external login.");
+        }
         var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUri);
         return Challenge(properties, provider);
     }

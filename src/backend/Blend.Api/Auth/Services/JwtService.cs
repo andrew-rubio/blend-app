@@ -34,7 +34,7 @@ public sealed class JwtService : IJwtService
             issuer: _options.Issuer,
             audience: _options.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_options.AccessTokenExpiryMinutes),
+            expires: DateTimeOffset.UtcNow.AddMinutes(_options.AccessTokenExpiryMinutes).UtcDateTime,
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
