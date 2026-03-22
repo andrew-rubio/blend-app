@@ -1,5 +1,6 @@
 using Blend.Api.Auth;
 using Blend.Api.Middleware;
+using Blend.Api.Services.Spoonacular;
 using Blend.Infrastructure.Cosmos;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -47,6 +48,13 @@ if (!string.IsNullOrWhiteSpace(cosmosSection["ConnectionString"])
 
 // ── Authentication & Authorisation ───────────────────────────────────────────
 builder.Services.AddBlendAuthentication(builder.Configuration);
+
+// ── Spoonacular & Cache Services ─────────────────────────────────────────────
+// Only register when a Spoonacular API key is configured
+if (!string.IsNullOrWhiteSpace(builder.Configuration["Spoonacular:ApiKey"]))
+{
+    builder.Services.AddSpoonacularServices(builder.Configuration);
+}
 
 // ── Routing ────────────────────────────────────────────────────────────────────
 builder.Services.AddRouting(options => options.LowercaseUrls = true);

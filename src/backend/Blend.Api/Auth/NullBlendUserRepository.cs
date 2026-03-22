@@ -24,7 +24,7 @@ internal sealed class NullBlendUserRepository : IRepository<BlendUser>
     public Task<BlendUser> UpdateAsync(BlendUser entity, string id, string partitionKey, CancellationToken cancellationToken = default)
         => throw Unsupported();
 
-    public Task PatchAsync(string id, string partitionKey, IEnumerable<(string Path, object? Value)> patches, CancellationToken cancellationToken = default)
+    public Task<BlendUser> PatchAsync(string id, string partitionKey, IReadOnlyDictionary<string, object?> patches, CancellationToken cancellationToken = default)
         => throw Unsupported();
 
     public Task DeleteAsync(string id, string partitionKey, CancellationToken cancellationToken = default)
