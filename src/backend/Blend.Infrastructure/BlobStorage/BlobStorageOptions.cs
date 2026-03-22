@@ -23,4 +23,7 @@ public sealed class BlobStorageOptions
 
     /// <summary>Maximum allowed upload size in bytes (default 10 MB).</summary>
     public long MaxFileSizeBytes { get; set; } = 10_485_760;
+
+    /// <summary>WebP encoding quality for image variants (0–100; default 85).</summary>
+    public int WebPQuality { get; set; } = 85;
 }

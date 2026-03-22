@@ -22,4 +22,11 @@ public sealed record UploadUrlRequest
     [Required]
     [Range(1, long.MaxValue, ErrorMessage = "FileSizeBytes must be greater than 0.")]
     public long FileSizeBytes { get; init; }
+
+    /// <summary>
+    /// Optional version string for recipe images (e.g. <c>v1</c>, <c>v2</c>).
+    /// Defaults to <c>v1</c> when not provided. Only used when <see cref="UploadUse"/>
+    /// is <see cref="MediaUploadUse.Recipe"/>.
+    /// </summary>
+    public string RecipeVersion { get; init; } = "v1";
 }

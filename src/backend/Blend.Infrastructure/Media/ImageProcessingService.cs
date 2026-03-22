@@ -3,6 +3,7 @@ using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Processing;
 using Blend.Infrastructure.BlobStorage;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Blend.Infrastructure.Media;
 
@@ -35,13 +36,16 @@ public sealed class ImageProcessingService : IImageProcessingService
 
     private readonly IBlobStorageService _blobStorage;
     private readonly ILogger<ImageProcessingService> _logger;
+    private readonly int _webPQuality;
 
     public ImageProcessingService(
         IBlobStorageService blobStorage,
+        IOptions<BlobStorageOptions> options,
         ILogger<ImageProcessingService> logger)
     {
         _blobStorage = blobStorage;
         _logger = logger;
+        _webPQuality = options.Value.WebPQuality;
     }
 
     /// <inheritdoc/>
@@ -84,7 +88,7 @@ public sealed class ImageProcessingService : IImageProcessingService
                 using var variantImage = image.Clone(ctx => ApplyResize(ctx, spec));
 
                 using var outputStream = new MemoryStream();
-                await variantImage.SaveAsync(outputStream, new WebpEncoder { Quality = 85 }, ct);
+                await variantImage.SaveAsync(outputStream, new WebpEncoder { Quality = _webPQuality }, ct);
                 outputStream.Position = 0;
 
                 await _blobStorage.UploadAsync(variantBlobPath, outputStream, "image/webp", ct: ct);

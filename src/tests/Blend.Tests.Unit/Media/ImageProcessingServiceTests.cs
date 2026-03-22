@@ -161,6 +161,7 @@ public class ImageProcessingServiceTests
 
         var sut = new ImageProcessingService(
             blobMock.Object,
+            Options.Create(DefaultOptions),
             NullLogger<ImageProcessingService>.Instance);
 
         return (sut, blobMock);

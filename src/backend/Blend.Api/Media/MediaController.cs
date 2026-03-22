@@ -93,7 +93,7 @@ public sealed class MediaController : ControllerBase
         var blobPath = request.UploadUse switch
         {
             MediaUploadUse.Profile => BlobPathBuilder.ForProfile(userId, uniqueName),
-            MediaUploadUse.Recipe  => BlobPathBuilder.ForRecipe(request.EntityId, "v1", uniqueName),
+            MediaUploadUse.Recipe  => BlobPathBuilder.ForRecipe(request.EntityId, request.RecipeVersion, uniqueName),
             MediaUploadUse.Content => BlobPathBuilder.ForContent(request.EntityId, uniqueName),
             _ => null,
         };
@@ -243,7 +243,17 @@ public sealed class MediaController : ControllerBase
 
                 case MediaUploadUse.Recipe when _recipeRepository is not null:
                 {
-                    var recipe = await _recipeRepository.GetByIdAsync(entityId, entityId, ct);
+                    // Recipes use authorId as partition key, which is unknown at this point.
+                    // Use a cross-partition query to locate the recipe, then patch with its
+                    // authorId as the correct partition key.
+                    // entityId is a GUID-like identifier; strip any characters that could
+                    // affect the query to avoid accidental injection.
+                    var safeEntityId = entityId.Replace("'", string.Empty);
+                    var results = await _recipeRepository.GetByQueryAsync(
+                        $"SELECT * FROM c WHERE c.id = '{safeEntityId}'",
+                        partitionKey: null,
+                        ct);
+                    var recipe = results.FirstOrDefault();
                     if (recipe is not null)
                     {
                         await _recipeRepository.PatchAsync(
