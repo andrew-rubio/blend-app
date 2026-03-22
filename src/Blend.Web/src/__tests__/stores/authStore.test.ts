@@ -67,4 +67,19 @@ describe('authStore', () => {
     expect(state.user?.name).toBe('Updated Name')
     expect(state.user?.email).toBe(mockUser.email)
   })
+
+  it('should set a new token (token refresh)', () => {
+    const store = useAuthStore.getState()
+    store.login(mockUser, 'old-token')
+    store.setToken('new-refreshed-token')
+
+    expect(useAuthStore.getState().token).toBe('new-refreshed-token')
+    expect(useAuthStore.getState().isAuthenticated).toBe(true)
+  })
+
+  it('updateUser should not change user if not logged in', () => {
+    const store = useAuthStore.getState()
+    store.updateUser({ name: 'Nobody' })
+    expect(useAuthStore.getState().user).toBeNull()
+  })
 })

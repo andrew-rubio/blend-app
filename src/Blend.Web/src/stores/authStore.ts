@@ -14,6 +14,7 @@ interface AuthActions {
   logout: () => void
   setLoading: (loading: boolean) => void
   updateUser: (user: Partial<User>) => void
+  setToken: (token: string) => void
 }
 
 type AuthStore = AuthState & AuthActions
@@ -37,6 +38,7 @@ export const useAuthStore = create<AuthStore>()(
         set((state) => ({
           user: state.user ? { ...state.user, ...updates } : null,
         })),
+      setToken: (token: string) => set({ token }),
     }),
     {
       name: 'blend-auth',
