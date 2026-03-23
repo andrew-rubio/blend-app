@@ -339,3 +339,49 @@ export interface HomeResponse {
   community: HomeCommunitySection
   recentlyViewed: HomeRecentlyViewedSection
 }
+
+// ── Profile ───────────────────────────────────────────────────────────────────
+
+export interface MyProfile {
+  id: string
+  displayName: string
+  email: string
+  avatarUrl?: string
+  bio?: string
+  joinDate: string
+  recipeCount: number
+  likeCount: number
+  followerCount: number
+  followingCount: number
+}
+
+export interface PublicProfile {
+  id: string
+  displayName: string
+  avatarUrl?: string
+  bio?: string
+  joinDate: string
+  recipeCount: number
+}
+
+export interface UpdateProfileRequest {
+  displayName: string
+  bio?: string
+  avatarUrl?: string
+}
+
+export interface ProfileRecipe {
+  id: string
+  title: string
+  imageUrl?: string
+  cuisines: string[]
+  likeCount: number
+  isPublic: boolean
+  createdAt: string
+}
+
+export interface ProfileRecipesResponse {
+  recipes: ProfileRecipe[]
+  nextCursor?: string
+  hasMore: boolean
+}
