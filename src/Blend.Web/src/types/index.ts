@@ -158,3 +158,81 @@ export interface Recipe {
   createdAt?: string
   updatedAt?: string
 }
+
+// ── Cook Mode ─────────────────────────────────────────────────────────────────
+
+export type CookingSessionStatus = 'Active' | 'Paused' | 'Completed'
+
+export interface SessionIngredient {
+  ingredientId: string
+  name: string
+  addedAt: string
+  notes?: string
+}
+
+export interface CookingSessionDish {
+  dishId: string
+  name: string
+  cuisineType?: string
+  ingredients: SessionIngredient[]
+  notes?: string
+}
+
+export interface CookingSession {
+  id: string
+  userId: string
+  dishes: CookingSessionDish[]
+  addedIngredients: SessionIngredient[]
+  status: CookingSessionStatus
+  createdAt: string
+  updatedAt: string
+  pausedAt?: string
+  ttl?: number
+}
+
+export interface SmartSuggestion {
+  ingredientId: string
+  name: string
+  aggregateScore: number
+  category?: string
+  reason: string
+}
+
+export interface SessionSuggestionsResult {
+  suggestions: SmartSuggestion[]
+  kbUnavailable: boolean
+}
+
+export interface IngredientDetailResult {
+  ingredientId: string
+  name: string
+  category?: string
+  flavourProfile?: string
+  substitutes: string[]
+  whyItPairs?: string
+  nutritionSummary?: string
+}
+
+export interface IngredientSearchResult {
+  id: string
+  name: string
+  category?: string
+}
+
+export interface CreateCookSessionRequest {
+  recipeId?: string
+  initialDishName?: string
+}
+
+export interface AddIngredientRequest {
+  ingredientId: string
+  name: string
+  notes?: string
+  dishId?: string
+}
+
+export interface AddDishRequest {
+  name: string
+  cuisineType?: string
+  notes?: string
+}
