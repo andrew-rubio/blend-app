@@ -4,6 +4,7 @@ using Blend.Api.Home.Services;
 using Blend.Api.Ingredients.Services;
 using Blend.Api.Middleware;
 using Blend.Api.Preferences.Services;
+using Blend.Api.Profile.Services;
 using Blend.Api.Recipes.Services;
 using Blend.Api.Search.Services;
 using Blend.Api.Services.Spoonacular;
@@ -79,6 +80,9 @@ builder.Services.AddPreferenceServices();
 
 // ── Recipes ───────────────────────────────────────────────────────────────────
 builder.Services.AddRecipeServices();
+
+// ── Profile ────────────────────────────────────────────────────────────────────
+builder.Services.AddProfileServices();
 
 // ── Search ────────────────────────────────────────────────────────────────────
 builder.Services.AddSearchServices();

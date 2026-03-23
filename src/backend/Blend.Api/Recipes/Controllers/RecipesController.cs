@@ -114,11 +114,12 @@ public sealed class RecipesController : ControllerBase
     // DELETE /api/v1/recipes/{id}
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
-    public async Task<IActionResult> DeleteRecipe(string id, CancellationToken ct)
+    public async Task<IActionResult> DeleteRecipe(string id, [FromQuery] bool confirm = false, CancellationToken ct = default)
     {
         var userId = GetUserId();
         if (userId is null)
@@ -131,10 +132,12 @@ public sealed class RecipesController : ControllerBase
             return ServiceUnavailableProblem();
         }
 
-        var result = await _recipeService.DeleteRecipeAsync(id, userId, ct);
+        var result = await _recipeService.DeleteRecipeAsync(id, userId, confirm, ct);
 
         return result switch
         {
+            RecipeOpResult.ConfirmationRequired => Problem(statusCode: StatusCodes.Status400BadRequest,
+                title: "Confirmation required", detail: "Pass ?confirm=true to confirm deletion."),
             RecipeOpResult.NotFound => Problem(statusCode: StatusCodes.Status404NotFound,
                 title: "Not found", detail: "Recipe not found."),
             RecipeOpResult.Forbidden => Problem(statusCode: StatusCodes.Status403Forbidden,
