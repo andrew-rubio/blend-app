@@ -1,4 +1,5 @@
 using Blend.Api.Auth;
+using Blend.Api.CookSessions.Services;
 using Blend.Api.Ingredients.Services;
 using Blend.Api.Middleware;
 using Blend.Api.Preferences.Services;
@@ -83,6 +84,9 @@ builder.Services.AddSearchServices();
 
 // ── Ingredient Knowledge Base ─────────────────────────────────────────────────
 builder.Services.AddKnowledgeBaseServices(builder.Configuration);
+
+// ── Cook Mode Sessions ────────────────────────────────────────────────────────
+builder.Services.AddCookSessionServices();
 
 // ── Routing ────────────────────────────────────────────────────────────────────
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
