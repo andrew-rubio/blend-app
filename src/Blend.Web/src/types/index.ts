@@ -106,3 +106,55 @@ export interface SearchQueryParams {
   cursor?: string
   pageSize?: number
 }
+
+// ── Recipe Detail ─────────────────────────────────────────────────────────────
+
+/** A single ingredient in a recipe with amount and unit. */
+export interface RecipeIngredient {
+  id: string
+  name: string
+  amount: number
+  unit: string
+  original?: string
+}
+
+/** A single step in a recipe's directions. */
+export interface RecipeStep {
+  number: number
+  step: string
+  imageUrl?: string
+}
+
+/** Author info for community recipes. */
+export interface RecipeAuthor {
+  id: string
+  name: string
+  avatarUrl?: string
+}
+
+/** Full recipe detail returned by GET /api/v1/recipes/{id}. */
+export interface Recipe {
+  id: string
+  title: string
+  description?: string
+  imageUrl?: string
+  photos?: string[]
+  cuisines: string[]
+  dishTypes: string[]
+  diets: string[]
+  intolerances: string[]
+  readyInMinutes?: number
+  prepTimeMinutes?: number
+  cookTimeMinutes?: number
+  servings: number
+  difficulty?: 'Easy' | 'Medium' | 'Hard'
+  ingredients: RecipeIngredient[]
+  steps: RecipeStep[]
+  dataSource: RecipeDataSource
+  author?: RecipeAuthor
+  likeCount: number
+  isLiked?: boolean
+  viewCount?: number
+  createdAt?: string
+  updatedAt?: string
+}
