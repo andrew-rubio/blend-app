@@ -599,7 +599,7 @@ public class FriendsServiceTests
     // ── Cooldown boundary tests ────────────────────────────────────────────────
 
     [Fact]
-    public async Task SendFriendRequest_DeclinedExactly30DaysAgo_StillInCooldown()
+    public async Task SendFriendRequest_DeclinedLessThan30DaysAgo_StillInCooldown()
     {
         var userMgr = MockUserManager();
         userMgr.Setup(m => m.FindByIdAsync("user-2"))

@@ -19,6 +19,9 @@ public sealed class FriendsService : IFriendsService
     private const int DefaultPageSize = 20;
     private const int MaxPageSize = 50;
 
+    /// <summary>Number of days a declined request must wait before the same user can re-send.</summary>
+    public const int CooldownDays = DeclinedCooldownDays;
+
     private readonly IRepository<Connection>? _connectionRepository;
     private readonly IRepository<Notification>? _notificationRepository;
     private readonly IRepository<BlendUser>? _userRepository;

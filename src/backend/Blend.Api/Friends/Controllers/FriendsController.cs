@@ -140,7 +140,7 @@ public sealed class FriendsController : ControllerBase
             FriendsOpResult.AlreadyExists => Problem(statusCode: StatusCodes.Status409Conflict,
                 title: "Conflict", detail: "A connection with this user already exists."),
             FriendsOpResult.CooldownActive => Problem(statusCode: StatusCodes.Status409Conflict,
-                title: "Conflict", detail: $"You must wait {30} days after a declined request before sending another."),
+                title: "Conflict", detail: $"You must wait {FriendsService.CooldownDays} days after a declined request before sending another."),
             _ => ServiceUnavailableProblem(),
         };
     }
