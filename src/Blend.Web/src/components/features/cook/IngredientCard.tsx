@@ -9,7 +9,7 @@ export interface IngredientCardProps {
   dishId?: string
 }
 
-export function IngredientCard({ ingredient, onRemove, onDetail, dishId: _dishId }: IngredientCardProps) {
+export function IngredientCard({ ingredient, onRemove, onDetail }: IngredientCardProps) {
   const initial = ingredient.name.charAt(0).toUpperCase()
   return (
     <div

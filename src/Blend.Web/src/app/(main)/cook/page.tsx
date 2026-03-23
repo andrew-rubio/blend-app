@@ -29,7 +29,9 @@ export default function CookPage() {
         onError: () => router.push('/login'),
       })
     }
-  }, [isLoading, error, sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
+    // createSession.mutate and router.push are stable refs; intentionally omitted to avoid re-triggering
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, error, sessionId])
 
   if (isLoading || createSession.isPending) {
     return (

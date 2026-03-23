@@ -29,7 +29,10 @@ export default function CookRecipePage() {
         },
       }
     )
-  }, [recipeId, activeLoading]) // eslint-disable-line react-hooks/exhaustive-deps
+    // createSession.mutate, router.push, and activeSession are stable or captured via closure;
+    // intentionally omitted to avoid infinite re-triggering
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recipeId, activeLoading])
 
   if (createSession.isPending || !sessionId) {
     return (
