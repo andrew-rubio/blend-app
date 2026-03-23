@@ -122,4 +122,25 @@ public interface ICookSessionService
     /// Used internally to enforce the one-active-session-per-user constraint (COOK-50).
     /// </summary>
     Task<bool> HasActiveSessionAsync(string userId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Submits ingredient pairing feedback for a completed session (COOK-31 through COOK-35).
+    /// Updates community pairing scores in the Knowledge Base.
+    /// Returns <c>false</c> if the session was not found or a required dependency is unavailable.
+    /// </summary>
+    Task<bool> SubmitFeedbackAsync(
+        string sessionId,
+        string userId,
+        SubmitFeedbackRequest request,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Converts a completed Cook Mode session into a published community recipe (COOK-40 through COOK-44).
+    /// Returns the new <see cref="PublishSessionResult"/>, or <c>null</c> if the session was not found.
+    /// </summary>
+    Task<PublishSessionResult?> PublishSessionAsync(
+        string sessionId,
+        string userId,
+        PublishSessionRequest request,
+        CancellationToken ct = default);
 }

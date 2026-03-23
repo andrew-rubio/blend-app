@@ -395,6 +395,103 @@ public sealed class CookSessionsController : ControllerBase
         return Ok(session);
     }
 
+    // ── POST /api/v1/cook-sessions/{id}/feedback ─────────────────────────────
+
+    /// <summary>
+    /// Submits ingredient pairing feedback for a completed session, updating community KB scores (COOK-31 through COOK-35, COOK-52 through COOK-55).
+    /// </summary>
+    [HttpPost("{id}/feedback")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> SubmitFeedback(
+        string id,
+        [FromBody] SubmitFeedbackRequest request,
+        CancellationToken ct)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+        {
+            return UnauthorizedProblem();
+        }
+
+        if (_cookSessionService is null)
+        {
+            return ServiceUnavailableProblem();
+        }
+
+        if (request.Feedback.Any(f => f.Rating < 1 || f.Rating > 5))
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Validation failed",
+                detail: "Each rating must be between 1 and 5.");
+        }
+
+        var found = await _cookSessionService.SubmitFeedbackAsync(id, userId, request, ct);
+        if (!found)
+        {
+            return NotFoundProblem(id);
+        }
+
+        return NoContent();
+    }
+
+    // ── POST /api/v1/cook-sessions/{id}/publish ───────────────────────────────
+
+    /// <summary>
+    /// Publishes the completed session as a community recipe (COOK-40 through COOK-44).
+    /// Returns the new recipe ID.
+    /// </summary>
+    [HttpPost("{id}/publish")]
+    [ProducesResponseType(typeof(PublishSessionResult), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> PublishSession(
+        string id,
+        [FromBody] PublishSessionRequest request,
+        CancellationToken ct)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+        {
+            return UnauthorizedProblem();
+        }
+
+        if (_cookSessionService is null)
+        {
+            return ServiceUnavailableProblem();
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Title))
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Validation failed",
+                detail: "Title is required.");
+        }
+
+        if (request.Directions.Count == 0)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Validation failed",
+                detail: "At least one direction step is required.");
+        }
+
+        var result = await _cookSessionService.PublishSessionAsync(id, userId, request, ct);
+        if (result is null)
+        {
+            return NotFoundProblem(id);
+        }
+
+        return CreatedAtAction(nameof(PublishSession), new { id }, result);
+    }
+
     // ── GET /api/v1/cook-sessions/{id}/suggestions ───────────────────────────
 
     /// <summary>

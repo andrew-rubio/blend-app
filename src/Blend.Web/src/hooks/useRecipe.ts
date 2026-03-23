@@ -1,6 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import { getRecipeApi, recordViewApi, likeRecipeApi, unlikeRecipeApi } from '@/lib/api/recipes'
+import {
+  getRecipeApi,
+  recordViewApi,
+  likeRecipeApi,
+  unlikeRecipeApi,
+  updateRecipeApi,
+  type UpdateRecipePayload,
+} from '@/lib/api/recipes'
 import type { Recipe } from '@/types'
 
 const RECIPE_STALE_TIME = 5 * 60_000
@@ -86,6 +93,25 @@ export function useLikeRecipe() {
     },
 
     onSettled: (_data, _err, { id }) => {
+      queryClient.invalidateQueries({ queryKey: recipeQueryKeys.detail(id) })
+    },
+  })
+}
+
+// ── Update recipe ─────────────────────────────────────────────────────────────
+
+/**
+ * Updates a community recipe (REQ-60).
+ * Calls PUT /api/v1/recipes/{id} and refreshes the cached recipe.
+ */
+export function useUpdateRecipe(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation<Recipe, { message: string; status: number }, UpdateRecipePayload>({
+    mutationFn: (payload) => updateRecipeApi(id, payload),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(recipeQueryKeys.detail(id), updated)
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: recipeQueryKeys.detail(id) })
     },
   })

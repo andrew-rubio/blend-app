@@ -90,6 +90,7 @@ public sealed class CookSessionTestFactory : WebApplicationFactory<Program>
     public readonly InMemoryUserRepository CookSessionUserRepository = new();
     private readonly InMemoryUserStore _cookSessionUserStore = new();
     public readonly InMemoryKnowledgeBaseService KnowledgeBaseService = new();
+    public readonly InMemoryRecipeRepository RecipeRepository = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -106,6 +107,9 @@ public sealed class CookSessionTestFactory : WebApplicationFactory<Program>
 
             services.RemoveAll<IRepository<CookingSession>>();
             services.AddSingleton<IRepository<CookingSession>>(SessionRepository);
+
+            services.RemoveAll<IRepository<Recipe>>();
+            services.AddSingleton<IRepository<Recipe>>(RecipeRepository);
 
             services.RemoveAll<IKnowledgeBaseService>();
             services.AddSingleton<IKnowledgeBaseService>(KnowledgeBaseService);
@@ -602,4 +606,191 @@ public class CookSessionEndpointTests : IClassFixture<CookSessionTestFactory>
         Assert.Single(dishIngredients);
         Assert.Equal("ing-garlic", dishIngredients[0].GetProperty("ingredientId").GetString());
     }
+
+    // ── POST /api/v1/cook-sessions/{id}/feedback ─────────────────────────────
+
+    [Fact]
+    public async Task SubmitFeedback_WithoutAuth_Returns401()
+    {
+        var client = CreateClient();
+        var response = await client.PostAsync("/api/v1/cook-sessions/any-id/feedback",
+            JsonBody(new { feedback = Array.Empty<object>() }));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SubmitFeedback_SessionNotFound_Returns404()
+    {
+        _factory.SessionRepository.Clear();
+        var (client, _) = await RegisterAndAuthenticateAsync();
+
+        var response = await client.PostAsync(
+            "/api/v1/cook-sessions/nonexistent/feedback",
+            JsonBody(new
+            {
+                feedback = new[]
+                {
+                    new { ingredientId1 = "ing-a", ingredientId2 = "ing-b", rating = 4 },
+                },
+            }));
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SubmitFeedback_InvalidRating_Returns400()
+    {
+        _factory.SessionRepository.Clear();
+        var (client, _) = await RegisterAndAuthenticateAsync();
+
+        var createResponse = await client.PostAsync("/api/v1/cook-sessions", JsonBody(new { }));
+        var createBody = await createResponse.Content.ReadAsStringAsync();
+        var sessionId = JsonSerializer.Deserialize<JsonElement>(createBody, JsonOptions).GetProperty("id").GetString();
+
+        var response = await client.PostAsync(
+            $"/api/v1/cook-sessions/{sessionId}/feedback",
+            JsonBody(new
+            {
+                feedback = new[]
+                {
+                    new { ingredientId1 = "ing-a", ingredientId2 = "ing-b", rating = 6 },
+                },
+            }));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SubmitFeedback_ValidPayload_Returns204()
+    {
+        _factory.SessionRepository.Clear();
+        var (client, _) = await RegisterAndAuthenticateAsync();
+
+        var createResponse = await client.PostAsync("/api/v1/cook-sessions", JsonBody(new { }));
+        var createBody = await createResponse.Content.ReadAsStringAsync();
+        var sessionId = JsonSerializer.Deserialize<JsonElement>(createBody, JsonOptions).GetProperty("id").GetString();
+
+        var response = await client.PostAsync(
+            $"/api/v1/cook-sessions/{sessionId}/feedback",
+            JsonBody(new
+            {
+                feedback = new[]
+                {
+                    new { ingredientId1 = "ing-tomato", ingredientId2 = "ing-basil", rating = 5, comment = (string?)"Great combo!" },
+                    new { ingredientId1 = "ing-garlic", ingredientId2 = "ing-olive-oil", rating = 4, comment = (string?)null },
+                },
+            }));
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    // ── POST /api/v1/cook-sessions/{id}/publish ───────────────────────────────
+
+    [Fact]
+    public async Task PublishSession_WithoutAuth_Returns401()
+    {
+        var client = CreateClient();
+        var response = await client.PostAsync("/api/v1/cook-sessions/any-id/publish",
+            JsonBody(new { title = "My Recipe", directions = Array.Empty<object>() }));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PublishSession_SessionNotFound_Returns404()
+    {
+        _factory.SessionRepository.Clear();
+        var (client, _) = await RegisterAndAuthenticateAsync();
+
+        var response = await client.PostAsync(
+            "/api/v1/cook-sessions/nonexistent/publish",
+            JsonBody(new
+            {
+                title = "My Recipe",
+                directions = new[] { new { stepNumber = 1, text = "Cook it." } },
+            }));
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PublishSession_MissingTitle_Returns400()
+    {
+        _factory.SessionRepository.Clear();
+        var (client, _) = await RegisterAndAuthenticateAsync();
+
+        var createResponse = await client.PostAsync("/api/v1/cook-sessions", JsonBody(new { }));
+        var createBody = await createResponse.Content.ReadAsStringAsync();
+        var sessionId = JsonSerializer.Deserialize<JsonElement>(createBody, JsonOptions).GetProperty("id").GetString();
+
+        var response = await client.PostAsync(
+            $"/api/v1/cook-sessions/{sessionId}/publish",
+            JsonBody(new
+            {
+                title = "",
+                directions = new[] { new { stepNumber = 1, text = "Cook it." } },
+            }));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PublishSession_NoDirections_Returns400()
+    {
+        _factory.SessionRepository.Clear();
+        var (client, _) = await RegisterAndAuthenticateAsync();
+
+        var createResponse = await client.PostAsync("/api/v1/cook-sessions", JsonBody(new { }));
+        var createBody = await createResponse.Content.ReadAsStringAsync();
+        var sessionId = JsonSerializer.Deserialize<JsonElement>(createBody, JsonOptions).GetProperty("id").GetString();
+
+        var response = await client.PostAsync(
+            $"/api/v1/cook-sessions/{sessionId}/publish",
+            JsonBody(new
+            {
+                title = "My Recipe",
+                directions = Array.Empty<object>(),
+            }));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PublishSession_ValidPayload_Returns201WithRecipeId()
+    {
+        _factory.SessionRepository.Clear();
+        var (client, _) = await RegisterAndAuthenticateAsync();
+
+        var createResponse = await client.PostAsync("/api/v1/cook-sessions", JsonBody(new { }));
+        var createBody = await createResponse.Content.ReadAsStringAsync();
+        var sessionId = JsonSerializer.Deserialize<JsonElement>(createBody, JsonOptions).GetProperty("id").GetString();
+
+        // Add an ingredient so the recipe has one
+        await client.PostAsync(
+            $"/api/v1/cook-sessions/{sessionId}/ingredients",
+            JsonBody(new { ingredientId = "ing-tomato", name = "Tomato" }));
+
+        var publishResponse = await client.PostAsync(
+            $"/api/v1/cook-sessions/{sessionId}/publish",
+            JsonBody(new
+            {
+                title = "Tomato Delight",
+                description = "A simple tomato dish",
+                directions = new[] { new { stepNumber = 1, text = "Chop the tomato." } },
+                photos = new[] { "https://example.com/photo.jpg" },
+                cuisineType = "Italian",
+                tags = new[] { "tomato", "simple" },
+                servings = 2,
+                prepTime = 10,
+                cookTime = 20,
+            }));
+
+        Assert.Equal(HttpStatusCode.Created, publishResponse.StatusCode);
+        var body = await publishResponse.Content.ReadAsStringAsync();
+        Assert.Contains("recipeId", body);
+        var result = JsonSerializer.Deserialize<JsonElement>(body, JsonOptions);
+        Assert.False(string.IsNullOrEmpty(result.GetProperty("recipeId").GetString()));
+    }
 }
+

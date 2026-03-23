@@ -236,3 +236,39 @@ export interface AddDishRequest {
   cuisineType?: string
   notes?: string
 }
+
+// ── Wrap-Up Flow ──────────────────────────────────────────────────────────────
+
+export interface PairingFeedbackItem {
+  ingredientId1: string
+  ingredientId2: string
+  /** Star rating from 1 (poor) to 5 (excellent). */
+  rating: number
+  comment?: string
+}
+
+export interface SubmitFeedbackRequest {
+  feedback: PairingFeedbackItem[]
+}
+
+export interface RecipeDirectionRequest {
+  stepNumber: number
+  text: string
+  mediaUrl?: string
+}
+
+export interface PublishSessionRequest {
+  title: string
+  description?: string
+  directions: RecipeDirectionRequest[]
+  photos?: string[]
+  cuisineType?: string
+  tags?: string[]
+  servings?: number
+  prepTime?: number
+  cookTime?: number
+}
+
+export interface PublishSessionResult {
+  recipeId: string
+}

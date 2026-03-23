@@ -3,6 +3,7 @@ using Blend.Api.CookSessions.Services;
 using Blend.Api.Ingredients.Models;
 using Blend.Api.Ingredients.Services;
 using Blend.Api.Preferences.Services;
+using Blend.Api.Recipes.Models;
 using Blend.Domain.Entities;
 using Blend.Domain.Repositories;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -726,4 +727,226 @@ public class CookSessionServiceTests
         Assert.NotNull(result.WhyItPairs);
         Assert.Contains("Basil", result.WhyItPairs);
     }
+
+    // ── SubmitFeedback ────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task SubmitFeedback_WhenRepositoryNull_ReturnsFalse()
+    {
+        var svc = CreateService(sessionRepo: null);
+        var request = new SubmitFeedbackRequest
+        {
+            Feedback = [new PairingFeedbackItem { IngredientId1 = "ing-a", IngredientId2 = "ing-b", Rating = 4 }],
+        };
+
+        var result = await svc.SubmitFeedbackAsync("session-1", "user-1", request);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task SubmitFeedback_WhenSessionNotFound_ReturnsFalse()
+    {
+        var repoMock = BuildSessionRepoMock(session: null);
+        var svc = CreateService(sessionRepo: repoMock.Object);
+        var request = new SubmitFeedbackRequest
+        {
+            Feedback = [new PairingFeedbackItem { IngredientId1 = "ing-a", IngredientId2 = "ing-b", Rating = 4 }],
+        };
+
+        var result = await svc.SubmitFeedbackAsync("session-1", "user-1", request);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task SubmitFeedback_WithValidPayload_ReturnsTrue()
+    {
+        var session = BuildSession();
+        var repoMock = BuildSessionRepoMock(session);
+
+        var kbMock = new Mock<IKnowledgeBaseService>();
+        kbMock.Setup(kb => kb.UpdatePairingScoreAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<double>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var svc = CreateService(sessionRepo: repoMock.Object, kb: kbMock.Object);
+        var request = new SubmitFeedbackRequest
+        {
+            Feedback =
+            [
+                new PairingFeedbackItem { IngredientId1 = "ing-tomato", IngredientId2 = "ing-basil", Rating = 5 },
+                new PairingFeedbackItem { IngredientId1 = "ing-garlic", IngredientId2 = "ing-olive-oil", Rating = 4 },
+            ],
+        };
+
+        var result = await svc.SubmitFeedbackAsync("session-1", "user-1", request);
+
+        Assert.True(result);
+        kbMock.Verify(kb => kb.UpdatePairingScoreAsync(
+            "ing-tomato", "ing-basil", 1.0, It.IsAny<CancellationToken>()), Times.Once);
+        kbMock.Verify(kb => kb.UpdatePairingScoreAsync(
+            "ing-garlic", "ing-olive-oil", 0.8, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task SubmitFeedback_WithKbNull_ReturnsTrueWithoutUpdating()
+    {
+        var session = BuildSession();
+        var repoMock = BuildSessionRepoMock(session);
+        var svc = CreateService(sessionRepo: repoMock.Object, kb: null);
+
+        var request = new SubmitFeedbackRequest
+        {
+            Feedback = [new PairingFeedbackItem { IngredientId1 = "ing-a", IngredientId2 = "ing-b", Rating = 3 }],
+        };
+
+        // Should succeed even without KB (graceful degradation)
+        var result = await svc.SubmitFeedbackAsync("session-1", "user-1", request);
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task SubmitFeedback_NormalisesRatingCorrectly()
+    {
+        var session = BuildSession();
+        var repoMock = BuildSessionRepoMock(session);
+
+        double capturedRating = 0;
+        var kbMock = new Mock<IKnowledgeBaseService>();
+        kbMock.Setup(kb => kb.UpdatePairingScoreAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<double>(), It.IsAny<CancellationToken>()))
+            .Callback<string, string, double, CancellationToken>((_, _, rating, _) => capturedRating = rating)
+            .Returns(Task.CompletedTask);
+
+        var svc = CreateService(sessionRepo: repoMock.Object, kb: kbMock.Object);
+        var request = new SubmitFeedbackRequest
+        {
+            Feedback = [new PairingFeedbackItem { IngredientId1 = "ing-a", IngredientId2 = "ing-b", Rating = 3 }],
+        };
+
+        await svc.SubmitFeedbackAsync("session-1", "user-1", request);
+
+        // 3 / 5 = 0.6
+        Assert.Equal(0.6, capturedRating, precision: 10);
+    }
+
+    // ── PublishSession ────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task PublishSession_WhenRepositoryNull_ReturnsNull()
+    {
+        var svc = CreateService(sessionRepo: null);
+        var request = new PublishSessionRequest
+        {
+            Title = "My Recipe",
+            Directions = [new Blend.Api.Recipes.Models.RecipeDirectionRequest { StepNumber = 1, Text = "Cook." }],
+        };
+
+        var result = await svc.PublishSessionAsync("session-1", "user-1", request);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task PublishSession_WhenSessionNotFound_ReturnsNull()
+    {
+        var sessionRepoMock = BuildSessionRepoMock(session: null);
+        var recipeRepoMock = new Mock<IRepository<Recipe>>();
+        var svc = CreateService(sessionRepo: sessionRepoMock.Object, recipeRepo: recipeRepoMock.Object);
+
+        var request = new PublishSessionRequest
+        {
+            Title = "My Recipe",
+            Directions = [new Blend.Api.Recipes.Models.RecipeDirectionRequest { StepNumber = 1, Text = "Cook." }],
+        };
+
+        var result = await svc.PublishSessionAsync("session-1", "user-1", request);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task PublishSession_CreatesRecipeWithSessionIngredients()
+    {
+        var dish = new CookingSessionDish
+        {
+            DishId = "dish-1",
+            Name = "Pasta",
+            Ingredients =
+            [
+                new SessionIngredient { IngredientId = "ing-tomato", Name = "Tomato", AddedAt = DateTimeOffset.UtcNow },
+                new SessionIngredient { IngredientId = "ing-basil", Name = "Basil", AddedAt = DateTimeOffset.UtcNow },
+            ],
+        };
+        var session = BuildSession(dishes: [dish]);
+        var sessionRepoMock = BuildSessionRepoMock(session);
+
+        Recipe? capturedRecipe = null;
+        var recipeRepoMock = new Mock<IRepository<Recipe>>();
+        recipeRepoMock.Setup(r => r.CreateAsync(It.IsAny<Recipe>(), It.IsAny<CancellationToken>()))
+            .Callback<Recipe, CancellationToken>((r, _) => capturedRecipe = r)
+            .ReturnsAsync((Recipe r, CancellationToken _) => r);
+
+        var svc = CreateService(sessionRepo: sessionRepoMock.Object, recipeRepo: recipeRepoMock.Object);
+
+        var request = new PublishSessionRequest
+        {
+            Title = "Tomato Pasta",
+            Directions = [new Blend.Api.Recipes.Models.RecipeDirectionRequest { StepNumber = 1, Text = "Boil pasta." }],
+        };
+
+        var result = await svc.PublishSessionAsync("session-1", "user-1", request);
+
+        Assert.NotNull(result);
+        Assert.False(string.IsNullOrEmpty(result.RecipeId));
+        Assert.NotNull(capturedRecipe);
+        Assert.Equal("Tomato Pasta", capturedRecipe.Title);
+        Assert.Equal(2, capturedRecipe.Ingredients.Count);
+        Assert.True(capturedRecipe.IsPublic);
+    }
+
+    [Fact]
+    public async Task PublishSession_DeduplicatesIngredientsAcrossDishesAndSession()
+    {
+        var sharedIngredient = new SessionIngredient
+        {
+            IngredientId = "ing-garlic",
+            Name = "Garlic",
+            AddedAt = DateTimeOffset.UtcNow,
+        };
+
+        var dish = new CookingSessionDish
+        {
+            DishId = "dish-1",
+            Name = "Main",
+            Ingredients = [sharedIngredient],
+        };
+
+        // Same garlic also at session level
+        var session = BuildSession(dishes: [dish], addedIngredients: [sharedIngredient]);
+        var sessionRepoMock = BuildSessionRepoMock(session);
+
+        Recipe? capturedRecipe = null;
+        var recipeRepoMock = new Mock<IRepository<Recipe>>();
+        recipeRepoMock.Setup(r => r.CreateAsync(It.IsAny<Recipe>(), It.IsAny<CancellationToken>()))
+            .Callback<Recipe, CancellationToken>((r, _) => capturedRecipe = r)
+            .ReturnsAsync((Recipe r, CancellationToken _) => r);
+
+        var svc = CreateService(sessionRepo: sessionRepoMock.Object, recipeRepo: recipeRepoMock.Object);
+
+        var request = new PublishSessionRequest
+        {
+            Title = "Garlic Dish",
+            Directions = [new Blend.Api.Recipes.Models.RecipeDirectionRequest { StepNumber = 1, Text = "Cook garlic." }],
+        };
+
+        await svc.PublishSessionAsync("session-1", "user-1", request);
+
+        Assert.NotNull(capturedRecipe);
+        // Should have only one garlic, not two
+        Assert.Single(capturedRecipe.Ingredients);
+        Assert.Equal("ing-garlic", capturedRecipe.Ingredients[0].IngredientId);
+    }
 }
+

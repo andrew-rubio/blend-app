@@ -70,3 +70,33 @@ export async function unlikeRecipeApi(id: string): Promise<void> {
   )
   return handleResponse<void>(response)
 }
+
+export interface UpdateRecipePayload {
+  title: string
+  description?: string
+  ingredients: { quantity: number; unit: string; ingredientName: string; ingredientId?: string }[]
+  directions: { stepNumber: number; text: string; mediaUrl?: string }[]
+  prepTime?: number
+  cookTime?: number
+  servings?: number
+  cuisineType?: string
+  dishType?: string
+  tags?: string[]
+  featuredPhotoUrl?: string
+  photos?: string[]
+  isPublic?: boolean
+}
+
+/**
+ * Updates a community recipe.
+ * PUT /api/v1/recipes/{id}
+ */
+export async function updateRecipeApi(id: string, payload: UpdateRecipePayload): Promise<Recipe> {
+  const response = await fetch(`${API_URL}/api/v1/recipes/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  return handleResponse<Recipe>(response)
+}
