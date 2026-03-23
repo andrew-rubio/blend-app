@@ -1,5 +1,6 @@
 using Blend.Api.Auth;
 using Blend.Api.CookSessions.Services;
+using Blend.Api.Friends.Services;
 using Blend.Api.Home.Services;
 using Blend.Api.Ingredients.Services;
 using Blend.Api.Middleware;
@@ -92,6 +93,9 @@ builder.Services.AddKnowledgeBaseServices(builder.Configuration);
 
 // ── Cook Mode Sessions ────────────────────────────────────────────────────────
 builder.Services.AddCookSessionServices();
+
+// ── Friends System ─────────────────────────────────────────────────────────────
+builder.Services.AddFriendsServices();
 
 // ── Home Page ─────────────────────────────────────────────────────────────────
 builder.Services.AddHomeServices();
