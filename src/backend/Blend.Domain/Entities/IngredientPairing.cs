@@ -26,6 +26,23 @@ public sealed class IngredientPairing
     [JsonPropertyName("coOccurrenceCount")]
     public int CoOccurrenceCount { get; init; }
 
+    /// <summary>
+    /// Origin of the pairing score.
+    /// <c>reference</c> — from curated static data; <c>community</c> — aggregated from user feedback.
+    /// </summary>
+    [JsonPropertyName("sourceType")]
+    public string SourceType { get; init; } = PairingSourceType.Reference;
+
     [JsonPropertyName("updatedAt")]
     public DateTimeOffset UpdatedAt { get; init; }
+}
+
+/// <summary>Well-known values for <see cref="IngredientPairing.SourceType"/>.</summary>
+public static class PairingSourceType
+{
+    /// <summary>Pairing score originates from curated reference data.</summary>
+    public const string Reference = "reference";
+
+    /// <summary>Pairing score is derived from aggregated community (user) feedback.</summary>
+    public const string Community = "community";
 }
