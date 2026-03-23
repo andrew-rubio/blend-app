@@ -272,3 +272,70 @@ export interface PublishSessionRequest {
 export interface PublishSessionResult {
   recipeId: string
 }
+
+// ── Home Page ─────────────────────────────────────────────────────────────────
+
+export interface HomeSearchSection {
+  placeholder: string
+}
+
+export interface HomeFeaturedRecipe {
+  id: string
+  title: string
+  imageUrl?: string
+  attribution?: string
+  shortDescription?: string
+}
+
+export interface HomeFeaturedStory {
+  id: string
+  title: string
+  coverImageUrl?: string
+  author?: string
+  excerpt?: string
+  readingTimeMinutes?: number
+}
+
+export interface HomeFeaturedVideo {
+  id: string
+  title: string
+  thumbnailUrl?: string
+  videoUrl?: string
+  creator?: string
+}
+
+export interface HomeFeaturedSection {
+  recipes: HomeFeaturedRecipe[]
+  stories: HomeFeaturedStory[]
+  videos: HomeFeaturedVideo[]
+}
+
+export interface HomeCommunityRecipe {
+  id: string
+  title: string
+  imageUrl?: string
+  authorId?: string
+  cuisineType?: string
+  likeCount: number
+}
+
+export interface HomeCommunitySection {
+  recipes: HomeCommunityRecipe[]
+}
+
+export interface HomeRecentlyViewedRecipe {
+  recipeId: string
+  referenceType: string
+  viewedAt: string
+}
+
+export interface HomeRecentlyViewedSection {
+  recipes: HomeRecentlyViewedRecipe[]
+}
+
+export interface HomeResponse {
+  search: HomeSearchSection
+  featured: HomeFeaturedSection
+  community: HomeCommunitySection
+  recentlyViewed: HomeRecentlyViewedSection
+}
