@@ -52,3 +52,57 @@ export interface IngredientItem {
   id: string
   name: string
 }
+
+// ── Search & Explore ──────────────────────────────────────────────────────────
+
+/** Indicates where a recipe result originated (EXPL-13). */
+export type RecipeDataSource = 'Spoonacular' | 'Community'
+
+/** A single recipe result returned by the unified search endpoint. */
+export interface RecipeSearchResult {
+  id: string
+  title: string
+  description?: string
+  imageUrl?: string
+  readyInMinutes?: number
+  servings?: number
+  cuisines: string[]
+  dishTypes: string[]
+  popularity: number
+  dataSource: RecipeDataSource
+  createdAt?: string
+  score: number
+}
+
+/** Metadata about a unified search response. */
+export interface SearchResponseMetadata {
+  totalResults: number
+  quotaExhausted: boolean
+  nextCursor?: string
+}
+
+/** Response envelope from GET /api/v1/search/recipes. */
+export interface UnifiedSearchResponse {
+  results: RecipeSearchResult[]
+  metadata: SearchResponseMetadata
+}
+
+/** Active filter state for recipe search (EXPL-11). */
+export interface SearchFilters {
+  cuisines: string[]
+  diets: string[]
+  dishTypes: string[]
+  maxReadyTime: number | null
+}
+
+/** Parameters forwarded to the search API. */
+export interface SearchQueryParams {
+  q?: string
+  cuisines?: string
+  diets?: string
+  dishTypes?: string
+  maxReadyTime?: number
+  sort?: string
+  cursor?: string
+  pageSize?: number
+}
