@@ -20,6 +20,7 @@ interface NotificationActions {
   markAllAsRead: () => void
   removeNotification: (id: string) => void
   clearAll: () => void
+  setUnreadCount: (count: number) => void
 }
 
 type NotificationStore = NotificationState & NotificationActions
@@ -59,4 +60,5 @@ export const useNotificationStore = create<NotificationStore>()((set) => ({
       }
     }),
   clearAll: () => set({ notifications: [], unreadCount: 0 }),
+  setUnreadCount: (count) => set({ unreadCount: count }),
 }))

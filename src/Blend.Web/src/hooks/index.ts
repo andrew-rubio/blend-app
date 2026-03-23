@@ -24,3 +24,6 @@ export {
   useCompleteSession,
   cookModeQueryKeys,
 } from './useCookMode'
+export { useFriends, useIncomingRequests, useSentRequests, useUserSearch, useSendFriendRequest, useAcceptFriendRequest, useDeclineFriendRequest, useRemoveFriend, friendsQueryKeys } from './useFriends'
+export { useNotifications, usePollUnreadCount, useMarkNotificationRead, useMarkAllNotificationsRead, notificationQueryKeys } from './useNotifications'
+export { useAdaptivePolling } from './useAdaptivePolling'
