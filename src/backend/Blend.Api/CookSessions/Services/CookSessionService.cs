@@ -394,7 +394,137 @@ public sealed class CookSessionService : ICookSessionService
         return await _sessionRepository.UpdateAsync(updated, sessionId, userId, ct);
     }
 
-    // ── Smart Suggestions ─────────────────────────────────────────────────────
+    // ── Wrap-Up: Feedback & Publish ───────────────────────────────────────────
+
+    /// <inheritdoc/>
+    public async Task<bool> SubmitFeedbackAsync(
+        string sessionId,
+        string userId,
+        SubmitFeedbackRequest request,
+        CancellationToken ct = default)
+    {
+        if (_sessionRepository is null)
+        {
+            return false;
+        }
+
+        var session = await GetSessionAsync(sessionId, userId, ct);
+        if (session is null)
+        {
+            return false;
+        }
+
+        if (_kb is null)
+        {
+            _logger.LogWarning("Knowledge Base unavailable; feedback for session '{SessionId}' will not update KB scores.", sessionId);
+            return true; // Accept the submission even without KB
+        }
+
+        foreach (var item in request.Feedback)
+        {
+            if (item.Rating < 1 || item.Rating > 5)
+            {
+                _logger.LogWarning("Skipping feedback item with invalid rating {Rating} for pair {Id1}:{Id2}.", item.Rating, item.IngredientId1, item.IngredientId2);
+                continue;
+            }
+
+            var normalizedRating = item.Rating / 5.0;
+            await _kb.UpdatePairingScoreAsync(item.IngredientId1, item.IngredientId2, normalizedRating, ct);
+        }
+
+        return true;
+    }
+
+    /// <inheritdoc/>
+    public async Task<PublishSessionResult?> PublishSessionAsync(
+        string sessionId,
+        string userId,
+        PublishSessionRequest request,
+        CancellationToken ct = default)
+    {
+        if (_sessionRepository is null || _recipeRepository is null)
+        {
+            return null;
+        }
+
+        var session = await GetSessionAsync(sessionId, userId, ct);
+        if (session is null)
+        {
+            return null;
+        }
+
+        // Collect all unique ingredients from all dishes and session-level ingredients
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var ingredients = new List<RecipeIngredient>();
+
+        foreach (var dish in session.Dishes)
+        {
+            foreach (var si in dish.Ingredients)
+            {
+                if (seen.Add(si.IngredientId))
+                {
+                    ingredients.Add(new RecipeIngredient
+                    {
+                        Quantity = 1,
+                        Unit = string.Empty,
+                        IngredientName = si.Name,
+                        IngredientId = si.IngredientId,
+                    });
+                }
+            }
+        }
+
+        foreach (var si in session.AddedIngredients)
+        {
+            if (seen.Add(si.IngredientId))
+            {
+                ingredients.Add(new RecipeIngredient
+                {
+                    Quantity = 1,
+                    Unit = string.Empty,
+                    IngredientName = si.Name,
+                    IngredientId = si.IngredientId,
+                });
+            }
+        }
+
+        var directions = request.Directions
+            .Select(d => new RecipeDirection
+            {
+                StepNumber = d.StepNumber,
+                Text = d.Text,
+                MediaUrl = d.MediaUrl,
+            })
+            .ToList();
+
+        var now = DateTimeOffset.UtcNow;
+        var recipe = new Recipe
+        {
+            Id = Guid.NewGuid().ToString(),
+            AuthorId = userId,
+            Title = request.Title,
+            Description = request.Description,
+            Ingredients = ingredients,
+            Directions = directions,
+            PrepTime = request.PrepTime,
+            CookTime = request.CookTime,
+            Servings = request.Servings,
+            CuisineType = request.CuisineType,
+            Tags = request.Tags,
+            FeaturedPhotoUrl = request.Photos.Count > 0 ? request.Photos[0] : null,
+            Photos = request.Photos,
+            IsPublic = true,
+            LikeCount = 0,
+            ViewCount = 0,
+            CreatedAt = now,
+            UpdatedAt = now,
+        };
+
+        var created = await _recipeRepository.CreateAsync(recipe, ct);
+        return new PublishSessionResult { RecipeId = created.Id };
+    }
+
+
 
     /// <inheritdoc/>
     public async Task<SessionSuggestionsResult> GetSuggestionsAsync(

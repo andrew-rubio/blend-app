@@ -97,6 +97,16 @@ public sealed class InMemoryKnowledgeBaseService : IKnowledgeBaseService
 
     public Task<bool> IsAvailableAsync(CancellationToken ct = default) =>
         Task.FromResult(_available);
+
+    public Task UpdatePairingScoreAsync(
+        string ingredientId1,
+        string ingredientId2,
+        double normalizedRating,
+        CancellationToken ct = default)
+    {
+        // No-op in tests — pairing updates are tested via unit tests
+        return Task.CompletedTask;
+    }
 }
 
 // ── In-memory pairing repository ──────────────────────────────────────────────

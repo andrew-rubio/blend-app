@@ -57,4 +57,20 @@ public interface IKnowledgeBaseService
     /// Returns <c>false</c> when the circuit is open (3 consecutive failures within the last 60 seconds).
     /// </summary>
     Task<bool> IsAvailableAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Aggregates a new user rating into the community pairing score for the given ingredient pair (COOK-52 through COOK-55).
+    /// The rating is normalised from [1,5] to [0,1].
+    /// Updates both directions of the pair (A→B and B→A).
+    /// Creates the pairing document if it does not yet exist.
+    /// </summary>
+    /// <param name="ingredientId1">First ingredient in the pair.</param>
+    /// <param name="ingredientId2">Second ingredient in the pair.</param>
+    /// <param name="normalizedRating">Rating already normalised to [0,1].</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task UpdatePairingScoreAsync(
+        string ingredientId1,
+        string ingredientId2,
+        double normalizedRating,
+        CancellationToken ct = default);
 }

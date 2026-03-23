@@ -315,4 +315,123 @@ public class KnowledgeBaseServiceTests
         Assert.Equal("reference", PairingSourceType.Reference);
         Assert.Equal("community", PairingSourceType.Community);
     }
+
+    // ── UpdatePairingScoreAsync — pairing score aggregation ───────────────────
+
+    [Fact]
+    public async Task UpdatePairingScoreAsync_WhenRepositoryNull_DoesNotThrow()
+    {
+        var svc = CreateService(pairingRepo: null);
+
+        // Should complete gracefully without throwing
+        await svc.UpdatePairingScoreAsync("ing-tomato", "ing-basil", 0.8);
+    }
+
+    [Fact]
+    public async Task UpdatePairingScoreAsync_WhenPairingExists_UpdatesScoreByWeightedAverage()
+    {
+        var existingPairing = new IngredientPairing
+        {
+            Id = "ing-tomato:ing-basil",
+            IngredientId = "ing-tomato",
+            PairedIngredientId = "ing-basil",
+            Score = 0.5,
+            CoOccurrenceCount = 2,
+            SourceType = PairingSourceType.Reference,
+            UpdatedAt = DateTimeOffset.UtcNow,
+        };
+
+        IngredientPairing? capturedUpdate = null;
+        var mock = new Mock<IRepository<IngredientPairing>>();
+        mock.Setup(r => r.GetByIdAsync("ing-tomato:ing-basil", "ing-tomato", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingPairing);
+        mock.Setup(r => r.UpdateAsync(It.IsAny<IngredientPairing>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Callback<IngredientPairing, string, string, CancellationToken>((p, _, _, _) => capturedUpdate = p)
+            .ReturnsAsync((IngredientPairing p, string _, string _, CancellationToken _) => p);
+        // Reverse direction
+        mock.Setup(r => r.GetByIdAsync("ing-basil:ing-tomato", "ing-basil", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IngredientPairing?)null);
+        mock.Setup(r => r.CreateAsync(It.IsAny<IngredientPairing>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IngredientPairing p, CancellationToken _) => p);
+
+        var svc = CreateService(pairingRepo: mock.Object);
+
+        // Submit rating of 5 → normalised = 1.0
+        // Expected new score = (0.5 * 2 + 1.0) / 3 = 2.0/3 ≈ 0.6667
+        await svc.UpdatePairingScoreAsync("ing-tomato", "ing-basil", 1.0);
+
+        Assert.NotNull(capturedUpdate);
+        Assert.Equal(PairingSourceType.Community, capturedUpdate.SourceType);
+        Assert.Equal(3, capturedUpdate.CoOccurrenceCount);
+        Assert.Equal(2.0 / 3.0, capturedUpdate.Score, precision: 10);
+    }
+
+    [Fact]
+    public async Task UpdatePairingScoreAsync_WhenPairingDoesNotExist_CreatesNewCommunityPairing()
+    {
+        var created = new List<IngredientPairing>();
+        var mock = new Mock<IRepository<IngredientPairing>>();
+        mock.Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IngredientPairing?)null);
+        mock.Setup(r => r.CreateAsync(It.IsAny<IngredientPairing>(), It.IsAny<CancellationToken>()))
+            .Callback<IngredientPairing, CancellationToken>((p, _) => created.Add(p))
+            .ReturnsAsync((IngredientPairing p, CancellationToken _) => p);
+
+        var svc = CreateService(pairingRepo: mock.Object);
+        await svc.UpdatePairingScoreAsync("ing-new-a", "ing-new-b", 0.6);
+
+        // Forward direction
+        var forward = created.FirstOrDefault(p => p.Id == "ing-new-a:ing-new-b");
+        Assert.NotNull(forward);
+        Assert.Equal("ing-new-a", forward.IngredientId);
+        Assert.Equal("ing-new-b", forward.PairedIngredientId);
+        Assert.Equal(0.6, forward.Score, precision: 10);
+        Assert.Equal(1, forward.CoOccurrenceCount);
+        Assert.Equal(PairingSourceType.Community, forward.SourceType);
+    }
+
+    [Fact]
+    public async Task UpdatePairingScoreAsync_UpdatesBothDirections()
+    {
+        var mock = new Mock<IRepository<IngredientPairing>>();
+        mock.Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IngredientPairing?)null);
+        mock.Setup(r => r.CreateAsync(It.IsAny<IngredientPairing>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IngredientPairing p, CancellationToken _) => p);
+
+        var svc = CreateService(pairingRepo: mock.Object);
+        await svc.UpdatePairingScoreAsync("ing-a", "ing-b", 0.8);
+
+        // Both A→B and B→A should be created
+        mock.Verify(r => r.CreateAsync(
+            It.Is<IngredientPairing>(p => p.Id == "ing-a:ing-b"),
+            It.IsAny<CancellationToken>()), Times.Once);
+        mock.Verify(r => r.CreateAsync(
+            It.Is<IngredientPairing>(p => p.Id == "ing-b:ing-a"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdatePairingScoreAsync_ClampedToValidRange()
+    {
+        var created = new List<IngredientPairing>();
+        var mock = new Mock<IRepository<IngredientPairing>>();
+        mock.Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IngredientPairing?)null);
+        mock.Setup(r => r.CreateAsync(It.IsAny<IngredientPairing>(), It.IsAny<CancellationToken>()))
+            .Callback<IngredientPairing, CancellationToken>((p, _) => created.Add(p))
+            .ReturnsAsync((IngredientPairing p, CancellationToken _) => p);
+
+        var svc = CreateService(pairingRepo: mock.Object);
+        // Rating above 1.0 should be clamped
+        await svc.UpdatePairingScoreAsync("ing-a", "ing-b", 1.5);
+
+        Assert.NotEmpty(created);
+        Assert.All(created, p =>
+        {
+            Assert.True(p.Score <= 1.0, "Score should be clamped to 1.0.");
+            Assert.True(p.Score >= 0.0, "Score should be >= 0.0.");
+        });
+    }
 }
+

@@ -241,6 +241,97 @@ public sealed class KnowledgeBaseService : IKnowledgeBaseService
         return Task.FromResult(IsCircuitClosed());
     }
 
+    /// <inheritdoc/>
+    public async Task UpdatePairingScoreAsync(
+        string ingredientId1,
+        string ingredientId2,
+        double normalizedRating,
+        CancellationToken ct = default)
+    {
+        if (_pairingRepository is null)
+        {
+            _logger.LogWarning("Pairing repository unavailable; cannot update pairing score for '{Id1}':'{Id2}'.",
+                ingredientId1, ingredientId2);
+            return;
+        }
+
+        await UpdateOnePairingAsync(ingredientId1, ingredientId2, normalizedRating, ct);
+        await UpdateOnePairingAsync(ingredientId2, ingredientId1, normalizedRating, ct);
+    }
+
+    /// <summary>Updates (or creates) a single directional pairing entry in the <c>ingredientPairings</c> container.</summary>
+    private async Task UpdateOnePairingAsync(
+        string primaryId,
+        string pairedId,
+        double normalizedRating,
+        CancellationToken ct)
+    {
+        var pairingId = $"{primaryId}:{pairedId}";
+        IngredientPairing? existing = null;
+        try
+        {
+            existing = await _pairingRepository!.GetByIdAsync(pairingId, primaryId, ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Failed to retrieve pairing '{PairingId}' before update.", pairingId);
+        }
+
+        IngredientPairing updated;
+        if (existing is not null)
+        {
+            // Weighted average: newScore = (oldScore * count + newRating) / (count + 1)
+            var newCount = existing.CoOccurrenceCount + 1;
+            var newScore = Math.Clamp(
+                (existing.Score * existing.CoOccurrenceCount + normalizedRating) / newCount,
+                0.0,
+                1.0);
+
+            updated = new IngredientPairing
+            {
+                Id = existing.Id,
+                IngredientId = existing.IngredientId,
+                PairedIngredientId = existing.PairedIngredientId,
+                Score = newScore,
+                CoOccurrenceCount = newCount,
+                SourceType = PairingSourceType.Community,
+                UpdatedAt = DateTimeOffset.UtcNow,
+            };
+
+            try
+            {
+                await _pairingRepository!.UpdateAsync(updated, pairingId, primaryId, ct);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogWarning(ex, "Failed to update pairing '{PairingId}'.", pairingId);
+            }
+        }
+        else
+        {
+            // Create a new community pairing entry
+            updated = new IngredientPairing
+            {
+                Id = pairingId,
+                IngredientId = primaryId,
+                PairedIngredientId = pairedId,
+                Score = Math.Clamp(normalizedRating, 0.0, 1.0),
+                CoOccurrenceCount = 1,
+                SourceType = PairingSourceType.Community,
+                UpdatedAt = DateTimeOffset.UtcNow,
+            };
+
+            try
+            {
+                await _pairingRepository!.CreateAsync(updated, ct);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogWarning(ex, "Failed to create pairing '{PairingId}'.", pairingId);
+            }
+        }
+    }
+
     // ── Circuit-breaker helpers ───────────────────────────────────────────────
 
     /// <summary>
