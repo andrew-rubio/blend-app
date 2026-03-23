@@ -95,7 +95,7 @@ describe('HomeContainer', () => {
   })
 
   it('hides recently viewed section when empty', () => {
-    const dataWithEmptyRecentlyViewed = {
+    const dataWithEmptyRecentlyViewed: HomeResponse = {
       ...mockHomeData,
       recentlyViewed: { recipes: [] },
     }
