@@ -96,7 +96,7 @@ export function ProfileEditForm({ profile, onCancel, onSaved }: ProfileEditFormP
           </button>
         </div>
 
-        <div className="px-6 py-4 space-y-4">
+        <div className="space-y-4 px-6 py-4">
           {/* Avatar upload */}
           <div className="flex flex-col items-center gap-3">
             <div className="relative h-20 w-20 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">

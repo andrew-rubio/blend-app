@@ -17,13 +17,17 @@ export function RecipeContextMenu({ recipe, onEdit, onToggleVisibility, onDelete
 
   useEffect(() => {
     if (!open) return
-    function handleClickOutside(e: MouseEvent) {
+    function handleClickOutside(e: MouseEvent | TouchEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
   }, [open])
 
   function handleKeyDown(e: React.KeyboardEvent) {
