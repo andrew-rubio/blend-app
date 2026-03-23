@@ -155,17 +155,18 @@ public class EntitySerializationTests
             [
                 new CookingSessionDish
                 {
+                    DishId = "d1",
                     Name = "Pasta",
                     CuisineType = "Italian",
                     Notes = "Al dente",
                     Ingredients =
                     [
-                        new RecipeIngredient { Quantity = 200, Unit = "g", IngredientName = "spaghetti" },
+                        new SessionIngredient { IngredientId = "ing-spaghetti", Name = "spaghetti", AddedAt = DateTimeOffset.UtcNow },
                     ],
                 },
             ],
             Status = CookingSessionStatus.Active,
-            StartedAt = DateTimeOffset.UtcNow,
+            CreatedAt = DateTimeOffset.UtcNow,
             UpdatedAt = DateTimeOffset.UtcNow,
         };
 
