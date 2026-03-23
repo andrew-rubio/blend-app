@@ -2,6 +2,7 @@ using Blend.Api.Auth;
 using Blend.Api.Middleware;
 using Blend.Api.Preferences.Services;
 using Blend.Api.Recipes.Services;
+using Blend.Api.Search.Services;
 using Blend.Api.Services.Spoonacular;
 using Blend.Infrastructure.BlobStorage;
 using Blend.Infrastructure.Cosmos;
@@ -75,6 +76,9 @@ builder.Services.AddPreferenceServices();
 
 // ── Recipes ───────────────────────────────────────────────────────────────────
 builder.Services.AddRecipeServices();
+
+// ── Search ────────────────────────────────────────────────────────────────────
+builder.Services.AddSearchServices();
 
 // ── Routing ────────────────────────────────────────────────────────────────────
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
