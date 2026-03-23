@@ -90,4 +90,10 @@ public sealed class Recipe
 
     [JsonPropertyName("updatedAt")]
     public DateTimeOffset UpdatedAt { get; init; }
+
+    [JsonPropertyName("isDeleted")]
+    public bool IsDeleted { get; init; }
+
+    [JsonPropertyName("deletedAt")]
+    public DateTimeOffset? DeletedAt { get; init; }
 }

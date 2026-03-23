@@ -1,6 +1,8 @@
 using Blend.Api.Recipes.Models;
 using Blend.Domain.Entities;
+using Blend.Domain.Identity;
 using Blend.Domain.Repositories;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 
 namespace Blend.Api.Recipes.Services;
@@ -9,16 +11,19 @@ public sealed class RecipeService : IRecipeService
 {
     private readonly IRepository<Recipe>? _recipeRepository;
     private readonly IRepository<Activity>? _activityRepository;
+    private readonly UserManager<BlendUser>? _userManager;
     private readonly ILogger<RecipeService> _logger;
 
     public RecipeService(
         ILogger<RecipeService> logger,
         IRepository<Recipe>? recipeRepository = null,
-        IRepository<Activity>? activityRepository = null)
+        IRepository<Activity>? activityRepository = null,
+        UserManager<BlendUser>? userManager = null)
     {
         _logger = logger;
         _recipeRepository = recipeRepository;
         _activityRepository = activityRepository;
+        _userManager = userManager;
     }
 
     public IReadOnlyList<string> ValidateCreateRecipe(CreateRecipeRequest request)
@@ -124,7 +129,20 @@ public sealed class RecipeService : IRecipeService
             UpdatedAt = now,
         };
 
-        return await _recipeRepository.CreateAsync(recipe, ct);
+        var result = await _recipeRepository.CreateAsync(recipe, ct);
+
+        if (_userManager is not null)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user is not null)
+            {
+                user.RecipeCount = user.RecipeCount + 1;
+                user.UpdatedAt = DateTimeOffset.UtcNow;
+                await _userManager.UpdateAsync(user);
+            }
+        }
+
+        return result;
     }
 
     public async Task<Recipe?> GetRecipeAsync(string id, string? requestingUserId, CancellationToken ct = default)
@@ -143,6 +161,11 @@ public sealed class RecipeService : IRecipeService
 
         var recipe = results.FirstOrDefault();
         if (recipe is null)
+        {
+            return null;
+        }
+
+        if (recipe.IsDeleted)
         {
             return null;
         }
@@ -225,12 +248,17 @@ public sealed class RecipeService : IRecipeService
         return (result, RecipeOpResult.Success, null);
     }
 
-    public async Task<RecipeOpResult> DeleteRecipeAsync(string id, string requestingUserId, CancellationToken ct = default)
+    public async Task<RecipeOpResult> DeleteRecipeAsync(string id, string requestingUserId, bool confirmed, CancellationToken ct = default)
     {
         if (_recipeRepository is null)
         {
             _logger.LogWarning("Recipe repository is not available; cannot delete recipe {RecipeId}.", id);
             return RecipeOpResult.NotFound;
+        }
+
+        if (!confirmed)
+        {
+            return RecipeOpResult.ConfirmationRequired;
         }
 
         var safeId = id.Replace("'", string.Empty);
@@ -240,7 +268,7 @@ public sealed class RecipeService : IRecipeService
             ct);
 
         var recipe = results.FirstOrDefault();
-        if (recipe is null)
+        if (recipe is null || recipe.IsDeleted)
         {
             return RecipeOpResult.NotFound;
         }
@@ -263,7 +291,26 @@ public sealed class RecipeService : IRecipeService
             }
         }
 
-        await _recipeRepository.DeleteAsync(recipe.Id, recipe.AuthorId, ct);
+        // Soft-delete: mark as deleted with a timestamp; hard delete runs after 30-day grace period
+        var patches = new Dictionary<string, object?>
+        {
+            ["/isDeleted"] = true,
+            ["/deletedAt"] = DateTimeOffset.UtcNow,
+            ["/updatedAt"] = DateTimeOffset.UtcNow,
+        };
+        await _recipeRepository.PatchAsync(recipe.Id, recipe.AuthorId, patches, ct);
+
+        if (_userManager is not null)
+        {
+            var user = await _userManager.FindByIdAsync(recipe.AuthorId);
+            if (user is not null)
+            {
+                user.RecipeCount = Math.Max(0, user.RecipeCount - 1);
+                user.UpdatedAt = DateTimeOffset.UtcNow;
+                await _userManager.UpdateAsync(user);
+            }
+        }
+
         return RecipeOpResult.Success;
     }
 
@@ -304,7 +351,7 @@ public sealed class RecipeService : IRecipeService
     }
 
     public async Task<PagedResult<Recipe>> GetUserRecipesAsync(
-        string userId, string? requestingUserId, FeedPaginationOptions options, CancellationToken ct = default)
+        string userId, string? requestingUserId, FeedPaginationOptions options, RecipeSortOrder sort = RecipeSortOrder.Newest, CancellationToken ct = default)
     {
         if (_recipeRepository is null)
         {
@@ -314,9 +361,17 @@ public sealed class RecipeService : IRecipeService
 
         var safeUserId = userId.Replace("'", string.Empty);
         var isOwner = requestingUserId == userId;
+
+        var orderBy = sort switch
+        {
+            RecipeSortOrder.Oldest => "c.createdAt ASC",
+            RecipeSortOrder.MostLiked => "c.likeCount DESC",
+            _ => "c.createdAt DESC",
+        };
+
         var query = isOwner
-            ? $"SELECT * FROM c WHERE c.authorId = '{safeUserId}' ORDER BY c.createdAt DESC"
-            : $"SELECT * FROM c WHERE c.authorId = '{safeUserId}' AND c.isPublic = true ORDER BY c.createdAt DESC";
+            ? $"SELECT * FROM c WHERE c.authorId = '{safeUserId}' AND (NOT IS_DEFINED(c.isDeleted) OR c.isDeleted = false) ORDER BY {orderBy}"
+            : $"SELECT * FROM c WHERE c.authorId = '{safeUserId}' AND c.isPublic = true AND (NOT IS_DEFINED(c.isDeleted) OR c.isDeleted = false) ORDER BY {orderBy}";
 
         return await _recipeRepository.GetPagedAsync(query, options, partitionKey: userId, ct);
     }

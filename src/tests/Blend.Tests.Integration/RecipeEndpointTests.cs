@@ -67,6 +67,8 @@ public sealed class InMemoryRecipeRepository : IRepository<Recipe>
         var isPublic = existing.IsPublic;
         var updatedAt = existing.UpdatedAt;
         var likeCount = existing.LikeCount;
+        var isDeleted = existing.IsDeleted;
+        DateTimeOffset? deletedAt = existing.DeletedAt;
 
         foreach (var (path, value) in patches)
         {
@@ -85,6 +87,12 @@ public sealed class InMemoryRecipeRepository : IRepository<Recipe>
                         long l => (int)l,
                         _ => likeCount,
                     };
+                    break;
+                case "/isDeleted":
+                    isDeleted = value is bool bDel ? bDel : isDeleted;
+                    break;
+                case "/deletedAt":
+                    deletedAt = value is DateTimeOffset dtoDel ? dtoDel : deletedAt;
                     break;
             }
         }
@@ -110,6 +118,8 @@ public sealed class InMemoryRecipeRepository : IRepository<Recipe>
             ViewCount = existing.ViewCount,
             CreatedAt = existing.CreatedAt,
             UpdatedAt = updatedAt,
+            IsDeleted = isDeleted,
+            DeletedAt = deletedAt,
         };
 
         _items[id] = updated;
@@ -130,6 +140,8 @@ public sealed class InMemoryRecipeRepository : IRepository<Recipe>
 
         if (query.Contains("c.isPublic = true"))
             results = results.Where(r => r.IsPublic);
+
+        results = results.Where(r => !r.IsDeleted);
 
         return Task.FromResult(new PagedResult<Recipe> { Items = [.. results] });
     }
@@ -479,7 +491,21 @@ public class RecipeEndpointTests : IClassFixture<RecipesTestFactory>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    // 9. DELETE /api/v1/recipes/{id} as owner → 204
+    // 9. DELETE /api/v1/recipes/{id} without confirm=true → 400
+    [Fact]
+    public async Task DeleteRecipe_WithoutConfirm_Returns400()
+    {
+        var (client, _) = await RegisterAndAuthenticateAsync();
+        var createResp = await client.PostAsync("/api/v1/recipes", JsonBody(ValidRecipeBody()));
+        Assert.Equal(HttpStatusCode.Created, createResp.StatusCode);
+        var created = JsonSerializer.Deserialize<JsonElement>(await createResp.Content.ReadAsStringAsync(), JsonOptions);
+        var id = created.GetProperty("id").GetString()!;
+
+        var response = await client.DeleteAsync($"/api/v1/recipes/{id}");
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    // 9b. DELETE /api/v1/recipes/{id} with confirm=true as owner → 204
     [Fact]
     public async Task DeleteRecipe_AsOwner_Returns204()
     {
@@ -489,11 +515,11 @@ public class RecipeEndpointTests : IClassFixture<RecipesTestFactory>
         var created = JsonSerializer.Deserialize<JsonElement>(await createResp.Content.ReadAsStringAsync(), JsonOptions);
         var id = created.GetProperty("id").GetString()!;
 
-        var response = await client.DeleteAsync($"/api/v1/recipes/{id}");
+        var response = await client.DeleteAsync($"/api/v1/recipes/{id}?confirm=true");
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
-    // 10. DELETE /api/v1/recipes/{id} as non-owner → 403
+    // 10. DELETE /api/v1/recipes/{id} with confirm=true as non-owner → 403
     [Fact]
     public async Task DeleteRecipe_AsNonOwner_Returns403()
     {
@@ -504,7 +530,7 @@ public class RecipeEndpointTests : IClassFixture<RecipesTestFactory>
         var id = created.GetProperty("id").GetString()!;
 
         var (otherClient, _) = await RegisterAndAuthenticateAsync();
-        var response = await otherClient.DeleteAsync($"/api/v1/recipes/{id}");
+        var response = await otherClient.DeleteAsync($"/api/v1/recipes/{id}?confirm=true");
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 

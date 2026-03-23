@@ -46,7 +46,7 @@ public sealed class UserRecipesController : ControllerBase
 
         var clampedPageSize = Math.Clamp(pageSize, 1, 50);
         var options = new FeedPaginationOptions { PageSize = clampedPageSize, ContinuationToken = continuationToken };
-        var result = await _recipeService.GetUserRecipesAsync(userId, requestingUserId, options, ct);
+        var result = await _recipeService.GetUserRecipesAsync(userId, requestingUserId, options, RecipeSortOrder.Newest, ct);
         return Ok(result);
     }
 
@@ -58,6 +58,7 @@ public sealed class UserRecipesController : ControllerBase
     public async Task<IActionResult> GetMyRecipes(
         [FromQuery] int pageSize = 20,
         [FromQuery] string? continuationToken = null,
+        [FromQuery] string sort = "newest",
         CancellationToken ct = default)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -71,9 +72,16 @@ public sealed class UserRecipesController : ControllerBase
             return ServiceUnavailableProblem();
         }
 
+        var sortOrder = sort.ToLowerInvariant() switch
+        {
+            "oldest" => RecipeSortOrder.Oldest,
+            "mostliked" => RecipeSortOrder.MostLiked,
+            _ => RecipeSortOrder.Newest,
+        };
+
         var clampedPageSize = Math.Clamp(pageSize, 1, 50);
         var options = new FeedPaginationOptions { PageSize = clampedPageSize, ContinuationToken = continuationToken };
-        var result = await _recipeService.GetUserRecipesAsync(userId, userId, options, ct);
+        var result = await _recipeService.GetUserRecipesAsync(userId, userId, options, sortOrder, ct);
         return Ok(result);
     }
 

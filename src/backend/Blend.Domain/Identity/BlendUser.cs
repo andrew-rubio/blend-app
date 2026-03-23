@@ -41,6 +41,9 @@ public sealed class BlendUser
     [JsonPropertyName("displayName")]
     public string DisplayName { get; set; } = string.Empty;
 
+    [JsonPropertyName("bio")]
+    public string? Bio { get; set; }
+
     [JsonPropertyName("role")]
     public UserRole Role { get; set; } = UserRole.User;
 
@@ -52,6 +55,18 @@ public sealed class BlendUser
 
     [JsonPropertyName("updatedAt")]
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
+
+    [JsonPropertyName("recipeCount")]
+    public int RecipeCount { get; set; }
+
+    [JsonPropertyName("likeCount")]
+    public int LikeCount { get; set; }
+
+    [JsonPropertyName("followerCount")]
+    public int FollowerCount { get; set; }
+
+    [JsonPropertyName("followingCount")]
+    public int FollowingCount { get; set; }
 
     /// <summary>External (social) login providers linked to this account.</summary>
     [JsonPropertyName("externalLogins")]
