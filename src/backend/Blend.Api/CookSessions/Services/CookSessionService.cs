@@ -18,6 +18,9 @@ public sealed class CookSessionService : ICookSessionService
     /// </summary>
     private const int PausedSessionTtlSeconds = 86400;
 
+    /// <summary>Maximum pairings to fetch per ingredient when building suggestions.</summary>
+    private const int MaxPairingsPerIngredient = 50;
+
     private readonly IRepository<CookingSession>? _sessionRepository;
     private readonly IRepository<Recipe>? _recipeRepository;
     private readonly IKnowledgeBaseService? _kb;
@@ -535,7 +538,7 @@ public sealed class CookSessionService : ICookSessionService
             IReadOnlyList<Blend.Api.Ingredients.Models.PairingSuggestion> pairings;
             try
             {
-                pairings = await _kb!.GetPairingsAsync(ingredientId, limit: 50, ct: ct);
+                pairings = await _kb!.GetPairingsAsync(ingredientId, limit: MaxPairingsPerIngredient, ct: ct);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -628,9 +631,9 @@ public sealed class CookSessionService : ICookSessionService
         return $"Pairs well with {listed}.";
     }
 
-    /// <summary>Escapes single quotes in a string for safe embedding in Cosmos SQL queries.</summary>
+    /// <summary>Escapes single quotes in a string for safe embedding in Cosmos DB SQL queries.</summary>
     private static string EscapeSingleQuotes(string value) =>
-        value.Replace("'", "\\'", StringComparison.Ordinal);
+        value.Replace("'", "''", StringComparison.Ordinal);
 
     /// <summary>
     /// Creates a new <see cref="CookingSession"/> from an existing one, replacing only

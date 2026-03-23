@@ -89,7 +89,7 @@ public sealed class CookSessionTestFactory : WebApplicationFactory<Program>
     public readonly InMemoryCookSessionRepository SessionRepository = new();
     public readonly InMemoryUserRepository CookSessionUserRepository = new();
     private readonly InMemoryUserStore _cookSessionUserStore = new();
-    public readonly InMemoryKnowledgeBaseService KbService2 = new();
+    public readonly InMemoryKnowledgeBaseService KnowledgeBaseService = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -108,7 +108,7 @@ public sealed class CookSessionTestFactory : WebApplicationFactory<Program>
             services.AddSingleton<IRepository<CookingSession>>(SessionRepository);
 
             services.RemoveAll<IKnowledgeBaseService>();
-            services.AddSingleton<IKnowledgeBaseService>(KbService2);
+            services.AddSingleton<IKnowledgeBaseService>(KnowledgeBaseService);
         });
     }
 }
@@ -509,7 +509,7 @@ public class CookSessionEndpointTests : IClassFixture<CookSessionTestFactory>
     public async Task GetSuggestions_WhenKbUnavailable_ReturnsKbUnavailableFlag()
     {
         _factory.SessionRepository.Clear();
-        _factory.KbService2.SetAvailable(false);
+        _factory.KnowledgeBaseService.SetAvailable(false);
 
         try
         {
@@ -526,7 +526,7 @@ public class CookSessionEndpointTests : IClassFixture<CookSessionTestFactory>
         }
         finally
         {
-            _factory.KbService2.SetAvailable(true);
+            _factory.KnowledgeBaseService.SetAvailable(true);
         }
     }
 
@@ -534,13 +534,13 @@ public class CookSessionEndpointTests : IClassFixture<CookSessionTestFactory>
     public async Task GetSuggestions_WithIngredients_ReturnsSuggestions()
     {
         _factory.SessionRepository.Clear();
-        _factory.KbService2.SetAvailable(true);
-        _factory.KbService2.SeedIngredient(new Blend.Api.Ingredients.Models.IngredientDocument
+        _factory.KnowledgeBaseService.SetAvailable(true);
+        _factory.KnowledgeBaseService.SeedIngredient(new Blend.Api.Ingredients.Models.IngredientDocument
         {
             IngredientId = "ing-basil",
             Name = "Basil",
         });
-        _factory.KbService2.SeedPairing(new IngredientPairing
+        _factory.KnowledgeBaseService.SeedPairing(new IngredientPairing
         {
             Id = "ing-tomato:ing-basil",
             IngredientId = "ing-tomato",
