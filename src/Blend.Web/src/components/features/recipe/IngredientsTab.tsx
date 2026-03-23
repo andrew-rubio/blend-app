@@ -84,7 +84,7 @@ function IngredientRow({ ingredient, baseServings, adjustedServings }: Ingredien
 
   return (
     <li className="flex items-center gap-3 py-3">
-      <span className="w-24 text-right text-sm font-semibold text-gray-900 dark:text-white shrink-0">
+      <span className="w-24 shrink-0 text-right text-sm font-semibold text-gray-900 dark:text-white">
         {scaledAmount} {ingredient.unit}
       </span>
       <span className="text-sm text-gray-700 dark:text-gray-300 capitalize">{ingredient.name}</span>
