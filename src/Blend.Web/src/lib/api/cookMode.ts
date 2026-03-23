@@ -6,6 +6,9 @@ import type {
   SessionSuggestionsResult,
   IngredientDetailResult,
   IngredientSearchResult,
+  SubmitFeedbackRequest,
+  PublishSessionRequest,
+  PublishSessionResult,
 } from '@/types'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000'
@@ -130,4 +133,27 @@ export async function searchIngredientsApi(q: string, limit?: number): Promise<I
     credentials: 'include',
   })
   return handleResponse<IngredientSearchResult[]>(response)
+}
+
+export async function submitFeedbackApi(sessionId: string, req: SubmitFeedbackRequest): Promise<void> {
+  const response = await fetch(`${API_URL}/api/v1/cook-sessions/${sessionId}/feedback`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  })
+  return handleResponse<void>(response)
+}
+
+export async function publishSessionApi(
+  sessionId: string,
+  req: PublishSessionRequest,
+): Promise<PublishSessionResult> {
+  const response = await fetch(`${API_URL}/api/v1/cook-sessions/${sessionId}/publish`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  })
+  return handleResponse<PublishSessionResult>(response)
 }

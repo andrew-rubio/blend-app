@@ -12,12 +12,17 @@ import {
   getSuggestionsApi,
   getIngredientDetailApi,
   searchIngredientsApi,
+  submitFeedbackApi,
+  publishSessionApi,
 } from '@/lib/api/cookMode'
 import type {
   CookingSession,
   CreateCookSessionRequest,
   AddIngredientRequest,
   AddDishRequest,
+  SubmitFeedbackRequest,
+  PublishSessionRequest,
+  PublishSessionResult,
 } from '@/types'
 
 const SESSION_STALE_TIME = 30_000
@@ -249,3 +254,18 @@ export function useCompleteSession(sessionId: string) {
     },
   })
 }
+
+export function useSubmitFeedback(sessionId: string) {
+  return useMutation({
+    mutationFn: (req: SubmitFeedbackRequest) => submitFeedbackApi(sessionId, req),
+  })
+}
+
+export function usePublishSession(sessionId: string) {
+  return useMutation({
+    mutationFn: (req: PublishSessionRequest) => publishSessionApi(sessionId, req),
+  })
+}
+
+// Convenience re-export so callers can import the result type without a separate import
+export type { PublishSessionResult }

@@ -118,7 +118,7 @@ export function CookModeContainer({ sessionId }: CookModeContainerProps) {
 
   function handleFinish() {
     completeSession.mutate(undefined, {
-      onSuccess: () => router.push('/'),
+      onSuccess: (session) => router.push(`/cook/wrap-up/${session.id}`),
     })
   }
 
