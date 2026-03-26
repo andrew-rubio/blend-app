@@ -461,3 +461,80 @@ export interface NotificationsPageResponse {
 export interface UnreadCountResponse {
   count: number
 }
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+
+export type UnitSystem = 'Metric' | 'Imperial'
+
+export interface AppSettings {
+  unitSystem: UnitSystem
+}
+
+export interface UpdateSettingsRequest {
+  unitSystem: UnitSystem
+}
+
+// ── Ingredient Submissions ────────────────────────────────────────────────────
+
+export type IngredientSubmissionStatus = 'Pending' | 'Approved' | 'Rejected'
+
+export type IngredientCategory =
+  | 'Produce'
+  | 'Meat'
+  | 'Seafood'
+  | 'Dairy'
+  | 'Grains'
+  | 'Spices'
+  | 'Condiments'
+  | 'Beverages'
+  | 'Other'
+
+export interface IngredientSubmission {
+  id: string
+  name: string
+  category: IngredientCategory
+  description?: string
+  status: IngredientSubmissionStatus
+  submittedAt: string
+  reviewedAt?: string
+  reviewNotes?: string
+}
+
+export interface CreateIngredientSubmissionRequest {
+  name: string
+  category: IngredientCategory
+  description?: string
+}
+
+export interface IngredientSubmissionsResponse {
+  submissions: IngredientSubmission[]
+}
+
+// ── Ingredient Catalogue ──────────────────────────────────────────────────────
+
+export interface CatalogueIngredient {
+  id: string
+  name: string
+  category?: string
+  flavourProfile?: string
+}
+
+export interface IngredientCatalogueResponse {
+  ingredients: CatalogueIngredient[]
+  nextCursor?: string
+  hasMore: boolean
+}
+
+// ── Account Deletion ──────────────────────────────────────────────────────────
+
+export interface DeleteAccountRequest {
+  password?: string
+}
+
+export interface DeleteAccountResponse {
+  scheduledDeletionDate: string
+}
+
+export interface CancelDeletionResponse {
+  message: string
+}
