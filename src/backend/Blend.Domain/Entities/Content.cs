@@ -9,6 +9,16 @@ public enum ContentType
     FeaturedRecipe,
     Story,
     Video,
+    IngredientSubmission,
+}
+
+/// <summary>Review status of a user-submitted content item.</summary>
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum SubmissionStatus
+{
+    Pending,
+    Approved,
+    Rejected,
 }
 
 /// <summary>Admin-managed content item (featured recipes, stories, videos).</summary>
@@ -46,4 +56,18 @@ public sealed class Content
 
     [JsonPropertyName("updatedAt")]
     public DateTimeOffset UpdatedAt { get; init; }
+
+    // ── Ingredient submission fields ───────────────────────────────────────────
+
+    /// <summary>The user who submitted this ingredient for review.</summary>
+    [JsonPropertyName("submittedByUserId")]
+    public string? SubmittedByUserId { get; init; }
+
+    /// <summary>Ingredient category (for ingredient submissions).</summary>
+    [JsonPropertyName("category")]
+    public string? Category { get; init; }
+
+    /// <summary>Review status for user-submitted content.</summary>
+    [JsonPropertyName("submissionStatus")]
+    public SubmissionStatus? SubmissionStatus { get; init; }
 }

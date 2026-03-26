@@ -18,6 +18,44 @@ public enum MeasurementUnit
     Imperial,
 }
 
+/// <summary>Theme preference for the application UI.</summary>
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum ThemePreference
+{
+    System,
+    Light,
+    Dark,
+}
+
+/// <summary>Notification preferences embedded on the user document.</summary>
+public sealed class NotificationPreferences
+{
+    [JsonPropertyName("friendRequests")]
+    public bool FriendRequests { get; init; } = true;
+
+    [JsonPropertyName("recipeLikes")]
+    public bool RecipeLikes { get; init; } = true;
+
+    [JsonPropertyName("recipePublished")]
+    public bool RecipePublished { get; init; } = true;
+
+    [JsonPropertyName("systemAnnouncements")]
+    public bool SystemAnnouncements { get; init; } = true;
+}
+
+/// <summary>App settings embedded on the user document.</summary>
+public sealed class AppSettings
+{
+    [JsonPropertyName("unitSystem")]
+    public MeasurementUnit UnitSystem { get; init; } = MeasurementUnit.Metric;
+
+    [JsonPropertyName("theme")]
+    public ThemePreference Theme { get; init; } = ThemePreference.System;
+
+    [JsonPropertyName("notifications")]
+    public NotificationPreferences Notifications { get; init; } = new();
+}
+
 /// <summary>Embedded object representing a user's food preferences.</summary>
 public sealed class UserPreferences
 {
@@ -62,6 +100,9 @@ public sealed class User
     [JsonPropertyName("measurementUnit")]
     public MeasurementUnit MeasurementUnit { get; init; } = MeasurementUnit.Metric;
 
+    [JsonPropertyName("settings")]
+    public AppSettings Settings { get; init; } = new();
+
     [JsonPropertyName("createdAt")]
     public DateTimeOffset CreatedAt { get; init; }
 
@@ -73,4 +114,12 @@ public sealed class User
 
     [JsonPropertyName("role")]
     public UserRole Role { get; init; } = UserRole.User;
+
+    /// <summary>When set, the account is pending deletion. After 30 days the account is permanently removed.</summary>
+    [JsonPropertyName("deletionRequestedAt")]
+    public DateTimeOffset? DeletionRequestedAt { get; init; }
+
+    /// <summary>Whether the account is deactivated (e.g., pending deletion during grace period).</summary>
+    [JsonPropertyName("isDeactivated")]
+    public bool IsDeactivated { get; init; }
 }

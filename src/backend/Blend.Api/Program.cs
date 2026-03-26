@@ -1,9 +1,11 @@
+using Blend.Api.Account.Services;
 using Blend.Api.Auth;
 using Blend.Api.CookSessions.Services;
 using Blend.Api.Friends.Services;
 using Blend.Api.Home.Services;
 using Blend.Api.Ingredients.Services;
 using Blend.Api.Middleware;
+using Blend.Api.Notifications.Services;
 using Blend.Api.Preferences.Services;
 using Blend.Api.Profile.Services;
 using Blend.Api.Recipes.Services;
@@ -99,6 +101,12 @@ builder.Services.AddFriendsServices();
 
 // ── Home Page ─────────────────────────────────────────────────────────────────
 builder.Services.AddHomeServices();
+
+// ── Notifications ─────────────────────────────────────────────────────────────
+builder.Services.AddNotificationServices();
+
+// ── Account Management ─────────────────────────────────────────────────────────
+builder.Services.AddAccountServices();
 
 // ── Routing ────────────────────────────────────────────────────────────────────
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
