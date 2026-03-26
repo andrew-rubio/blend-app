@@ -94,7 +94,8 @@ public sealed class IngredientSubmissionsController : ControllerBase
             return ServiceUnavailableProblem();
         }
 
-        var query = $"SELECT * FROM c WHERE c.contentType = 'IngredientSubmission' AND c.submittedByUserId = '{userId}' ORDER BY c.createdAt DESC";
+        var safeUserId = Sanitize(userId);
+        var query = $"SELECT * FROM c WHERE c.contentType = 'IngredientSubmission' AND c.submittedByUserId = '{safeUserId}' ORDER BY c.createdAt DESC";
         var submissions = await _contentRepository.GetByQueryAsync(query, null, ct);
 
         var response = submissions.Select(IngredientSubmissionResponse.FromEntity).ToList();
@@ -104,6 +105,8 @@ public sealed class IngredientSubmissionsController : ControllerBase
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private string? GetUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+    private static string Sanitize(string value) => value.Replace("'", string.Empty);
 
     private IActionResult UnauthorizedProblem() =>
         Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Unauthorized",

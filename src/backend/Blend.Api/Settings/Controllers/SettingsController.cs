@@ -53,7 +53,16 @@ public sealed class SettingsController : ControllerBase
             return NotFoundProblem(userId);
         }
 
-        return Ok(AppSettingsResponse.FromEntity(user.Settings));
+        // Prefer the Settings sub-document, but ensure UnitSystem is consistent with the legacy
+        // MeasurementUnit field so existing users who updated via /preferences see the correct value.
+        var effectiveSettings = new AppSettings
+        {
+            UnitSystem = user.MeasurementUnit,
+            Theme = user.Settings.Theme,
+            Notifications = user.Settings.Notifications,
+        };
+
+        return Ok(AppSettingsResponse.FromEntity(effectiveSettings));
     }
 
     // PUT /api/v1/settings
