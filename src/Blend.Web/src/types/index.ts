@@ -385,3 +385,79 @@ export interface ProfileRecipesResponse {
   nextCursor?: string
   hasMore: boolean
 }
+
+// ── Friends ───────────────────────────────────────────────────────────────────
+
+export interface FriendItem {
+  userId: string
+  displayName: string
+  avatarUrl?: string
+  recipeCount: number
+  connectedAt: string
+}
+
+export interface FriendRequestItem {
+  requestId: string
+  userId: string
+  displayName: string
+  avatarUrl?: string
+  sentAt: string
+}
+
+export type ConnectionStatus = 'none' | 'friends' | 'pending_sent' | 'pending_received'
+
+export interface UserSearchResultItem {
+  userId: string
+  displayName: string
+  avatarUrl?: string
+  recipeCount: number
+  connectionStatus: ConnectionStatus
+}
+
+export interface FriendsPageResponse {
+  items: FriendItem[]
+  nextCursor?: string
+  hasNextPage: boolean
+}
+
+export interface FriendRequestsPageResponse {
+  items: FriendRequestItem[]
+  nextCursor?: string
+  hasNextPage: boolean
+}
+
+export interface UserSearchPageResponse {
+  items: UserSearchResultItem[]
+  nextCursor?: string
+  hasNextPage: boolean
+}
+
+// ── Notifications ──────────────────────────────────────────────────────────────
+
+export type NotificationType =
+  | 'friendRequestReceived'
+  | 'friendRequestAccepted'
+  | 'recipeLiked'
+  | 'recipePublished'
+
+export interface ApiNotificationItem {
+  id: string
+  type: NotificationType
+  actorDisplayName?: string
+  actorAvatarUrl?: string
+  recipeTitle?: string
+  recipeId?: string
+  targetUserId?: string
+  isRead: boolean
+  createdAt: string
+}
+
+export interface NotificationsPageResponse {
+  items: ApiNotificationItem[]
+  nextCursor?: string
+  hasNextPage: boolean
+}
+
+export interface UnreadCountResponse {
+  count: number
+}

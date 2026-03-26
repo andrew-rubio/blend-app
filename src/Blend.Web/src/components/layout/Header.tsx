@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/authStore'
 import { Button } from '@/components/ui/Button'
 import { logoutApi } from '@/lib/api/auth'
+import { NotificationBell } from '@/components/features/notifications/NotificationBell'
 
 export function Header() {
   const router = useRouter()
@@ -40,11 +41,18 @@ export function Header() {
           >
             Explore
           </Link>
+          <Link
+            href="/friends"
+            className="text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+          >
+            Friends
+          </Link>
         </nav>
 
         <div className="flex items-center gap-3">
           {isAuthenticated ? (
             <>
+              <NotificationBell />
               <span className="text-sm text-gray-600 dark:text-gray-400">{user?.name}</span>
               <Button variant="outline" size="sm" onClick={handleLogout}>
                 Sign out
