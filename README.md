@@ -25,6 +25,8 @@ Both workflows use specialized GitHub Copilot agents working together to maintai
 
 ## 🚀 Quick Start
 
+[![Open in Dev Containers](https://img.shields.io/static/v1?style=for-the-badge&label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/andrew-rubio/blend-app)
+
 ### Option 1: Use This Repository as a Template (Full Environment)
 
 **Greenfield (New Project)**:
