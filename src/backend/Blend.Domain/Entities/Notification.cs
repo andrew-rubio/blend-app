@@ -9,6 +9,7 @@ public enum NotificationType
     FriendRequestReceived,
     FriendRequestAccepted,
     RecipeLiked,
+    RecipePublished,
     NewFollower,
     System,
 }
@@ -25,6 +26,9 @@ public sealed class Notification
     [JsonPropertyName("type")]
     public NotificationType Type { get; init; }
 
+    [JsonPropertyName("title")]
+    public string Title { get; init; } = string.Empty;
+
     [JsonPropertyName("sourceUserId")]
     public string? SourceUserId { get; init; }
 
@@ -33,6 +37,9 @@ public sealed class Notification
 
     [JsonPropertyName("message")]
     public string Message { get; init; } = string.Empty;
+
+    [JsonPropertyName("actionUrl")]
+    public string? ActionUrl { get; init; }
 
     [JsonPropertyName("read")]
     public bool Read { get; init; }
