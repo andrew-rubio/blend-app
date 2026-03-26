@@ -73,4 +73,19 @@ public interface IKnowledgeBaseService
         string ingredientId2,
         double normalizedRating,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Indexes an approved ingredient submission into the Azure AI Search index.
+    /// Returns <c>true</c> when indexing succeeds, <c>false</c> when the search
+    /// client is unavailable or indexing fails.
+    /// </summary>
+    /// <param name="ingredientId">The unique identifier to use as the index key.</param>
+    /// <param name="name">Ingredient name.</param>
+    /// <param name="category">Optional category (e.g., "vegetable").</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task<bool> IndexIngredientAsync(
+        string ingredientId,
+        string name,
+        string? category = null,
+        CancellationToken ct = default);
 }

@@ -12,6 +12,8 @@ public enum NotificationType
     RecipePublished,
     NewFollower,
     System,
+    IngredientApproved,
+    IngredientRejected,
 }
 
 /// <summary>A notification delivered to a user's inbox.</summary>

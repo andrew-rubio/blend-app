@@ -1,4 +1,5 @@
 using Blend.Api.Account.Services;
+using Blend.Api.Admin.Services;
 using Blend.Api.Auth;
 using Blend.Api.CookSessions.Services;
 using Blend.Api.Friends.Services;
@@ -107,6 +108,9 @@ builder.Services.AddNotificationServices();
 
 // ── Account Management ─────────────────────────────────────────────────────────
 builder.Services.AddAccountServices();
+
+// ── Admin Content Management ───────────────────────────────────────────────────
+builder.Services.AddAdminServices();
 
 // ── Routing ────────────────────────────────────────────────────────────────────
 builder.Services.AddRouting(options => options.LowercaseUrls = true);

@@ -57,6 +57,38 @@ public sealed class Content
     [JsonPropertyName("updatedAt")]
     public DateTimeOffset UpdatedAt { get; init; }
 
+    // ── Ordering ───────────────────────────────────────────────────────────────
+
+    /// <summary>Display order for home page aggregation sorting.</summary>
+    [JsonPropertyName("displayOrder")]
+    public int? DisplayOrder { get; init; }
+
+    // ── Featured recipe fields ─────────────────────────────────────────────────
+
+    /// <summary>Reference to an existing recipe (for featured recipes).</summary>
+    [JsonPropertyName("recipeId")]
+    public string? RecipeId { get; init; }
+
+    /// <summary>Recipe source ('spoonacular' or 'community') for featured recipes.</summary>
+    [JsonPropertyName("source")]
+    public string? Source { get; init; }
+
+    // ── Story fields ───────────────────────────────────────────────────────────
+
+    /// <summary>Related recipe IDs referenced in a story.</summary>
+    [JsonPropertyName("relatedRecipeIds")]
+    public IReadOnlyList<string>? RelatedRecipeIds { get; init; }
+
+    /// <summary>Estimated reading time in minutes (for stories).</summary>
+    [JsonPropertyName("readingTimeMinutes")]
+    public int? ReadingTimeMinutes { get; init; }
+
+    // ── Video fields ───────────────────────────────────────────────────────────
+
+    /// <summary>Duration of the video in seconds.</summary>
+    [JsonPropertyName("durationSeconds")]
+    public int? DurationSeconds { get; init; }
+
     // ── Ingredient submission fields ───────────────────────────────────────────
 
     /// <summary>The user who submitted this ingredient for review.</summary>
@@ -70,4 +102,8 @@ public sealed class Content
     /// <summary>Review status for user-submitted content.</summary>
     [JsonPropertyName("submissionStatus")]
     public SubmissionStatus? SubmissionStatus { get; init; }
+
+    /// <summary>Rejection reason for rejected ingredient submissions.</summary>
+    [JsonPropertyName("rejectionReason")]
+    public string? RejectionReason { get; init; }
 }
