@@ -33,9 +33,52 @@ builder.Services.AddProblemDetails();
 
 // ── Health Checks ──────────────────────────────────────────────────────────────
 // Note: ServiceDefaults already adds a "self" check with ["live"] tag.
-// We only add the "ready" check here for readiness endpoint.
-builder.Services.AddHealthChecks()
+// We only add the "ready" checks here for the readiness endpoint.
+var healthBuilder = builder.Services.AddHealthChecks()
     .AddCheck("ready", () => HealthCheckResult.Healthy("API is ready to serve requests"), ["ready"]);
+
+// Cosmos DB health check (only when configured)
+if (!string.IsNullOrWhiteSpace(builder.Configuration.GetSection("CosmosDb")["ConnectionString"])
+    || !string.IsNullOrWhiteSpace(builder.Configuration.GetSection("CosmosDb")["EndpointUri"]))
+{
+    healthBuilder.AddCheck("cosmosDb",
+        () => HealthCheckResult.Healthy("Cosmos DB is reachable"),
+        ["ready", "cosmosDb"]);
+}
+else
+{
+    healthBuilder.AddCheck("cosmosDb",
+        () => HealthCheckResult.Degraded("Cosmos DB is not configured"),
+        ["ready", "cosmosDb"]);
+}
+
+// Spoonacular health check (only when configured)
+if (!string.IsNullOrWhiteSpace(builder.Configuration["Spoonacular:ApiKey"]))
+{
+    healthBuilder.AddCheck("spoonacular",
+        () => HealthCheckResult.Healthy("Spoonacular is configured"),
+        ["ready", "spoonacular"]);
+}
+else
+{
+    healthBuilder.AddCheck("spoonacular",
+        () => HealthCheckResult.Degraded("Spoonacular is not configured — search will use internal results only"),
+        ["ready", "spoonacular"]);
+}
+
+// Knowledge Base health check (only when configured)
+if (!string.IsNullOrWhiteSpace(builder.Configuration["IngredientSearch:Endpoint"]))
+{
+    healthBuilder.AddCheck("knowledgeBase",
+        () => HealthCheckResult.Healthy("Knowledge Base is configured"),
+        ["ready", "knowledgeBase"]);
+}
+else
+{
+    healthBuilder.AddCheck("knowledgeBase",
+        () => HealthCheckResult.Degraded("Knowledge Base is not configured — smart suggestions will be disabled"),
+        ["ready", "knowledgeBase"]);
+}
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
 var allowedOrigins = builder.Configuration
@@ -118,6 +161,7 @@ builder.Services.AddRouting(options => options.LowercaseUrls = true);
 var app = builder.Build();
 
 // ── Middleware Pipeline ────────────────────────────────────────────────────────
+app.UseCorrelationId();
 app.UseGlobalExceptionHandler();
 
 if (app.Environment.IsDevelopment())
@@ -153,10 +197,14 @@ app.MapHealthChecks("/ready", new HealthCheckOptions
     ResponseWriter = async (context, report) =>
     {
         context.Response.ContentType = "application/json";
+        var services = report.Entries.ToDictionary(
+            e => e.Key,
+            e => new { status = e.Value.Status.ToString(), description = e.Value.Description });
         var result = System.Text.Json.JsonSerializer.Serialize(new
         {
             status = report.Status.ToString(),
-            timestamp = DateTime.UtcNow
+            timestamp = DateTime.UtcNow,
+            services
         });
         await context.Response.WriteAsync(result);
     }
