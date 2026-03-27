@@ -7,6 +7,7 @@ import {
   removeIngredientApi,
   addDishApi,
   removeDishApi,
+  updateDishApi,
   pauseSessionApi,
   completeSessionApi,
   getSuggestionsApi,
@@ -228,6 +229,20 @@ export function useRemoveDish(sessionId: string) {
       if (context?.snapshot) {
         queryClient.setQueryData(cookModeQueryKeys.session(sessionId), context.snapshot)
       }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: cookModeQueryKeys.session(sessionId) })
+    },
+  })
+}
+
+export function useUpdateDish(sessionId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (args: { dishId: string; name?: string; notes?: string }) =>
+      updateDishApi(sessionId, args.dishId, { name: args.name, notes: args.notes }),
+    onSuccess: (session) => {
+      queryClient.setQueryData(cookModeQueryKeys.session(sessionId), session)
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: cookModeQueryKeys.session(sessionId) })

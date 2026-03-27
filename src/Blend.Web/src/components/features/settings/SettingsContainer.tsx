@@ -6,6 +6,7 @@ import { clsx } from 'clsx'
 import { useUserPreferences } from '@/hooks/usePreferences'
 import { useAppSettings } from '@/hooks/useSettings'
 import { UnitToggle } from './UnitToggle'
+import { ThemeToggle } from './ThemeToggle'
 import { IngredientCatalogue } from './IngredientCatalogue'
 import { IngredientSubmissionForm } from './IngredientSubmissionForm'
 import { MySubmissions } from './MySubmissions'
@@ -215,6 +216,19 @@ export function SettingsContainer() {
           <div className="flex items-center justify-between gap-4">
             <span className="text-sm font-medium text-gray-900 dark:text-white">Measurement System</span>
             <UnitToggle />
+          </div>
+        </div>
+      </section>
+
+      {/* ── Appearance ────────────────────────────────────────────────────────── */}
+      <section aria-labelledby="appearance-heading" className="mt-6">
+        <h2 id="appearance-heading" className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          Appearance
+        </h2>
+        <div className="rounded-lg border border-gray-200 px-5 py-4 dark:border-gray-800">
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-sm font-medium text-gray-900 dark:text-white">Theme</span>
+            <ThemeToggle />
           </div>
         </div>
       </section>

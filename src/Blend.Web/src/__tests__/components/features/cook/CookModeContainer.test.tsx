@@ -19,6 +19,7 @@ vi.mock('@/hooks/useCookMode', () => ({
   useRemoveIngredient: vi.fn(),
   useAddDish: vi.fn(),
   useRemoveDish: vi.fn(),
+  useUpdateDish: vi.fn(),
   usePauseSession: vi.fn(),
   useCompleteSession: vi.fn(),
   useSuggestions: vi.fn(),
@@ -26,7 +27,7 @@ vi.mock('@/hooks/useCookMode', () => ({
   useIngredientDetail: vi.fn(),
 }))
 
-import { useSession, usePauseSession, useCompleteSession, useAddIngredient, useRemoveIngredient, useAddDish, useRemoveDish, useSuggestions, useIngredientSearch, useIngredientDetail } from '@/hooks/useCookMode'
+import { useSession, usePauseSession, useCompleteSession, useAddIngredient, useRemoveIngredient, useAddDish, useRemoveDish, useUpdateDish, useSuggestions, useIngredientSearch, useIngredientDetail } from '@/hooks/useCookMode'
 import { useCookModeStore } from '@/stores/cookModeStore'
 
 const mockUseSession = vi.mocked(useSession)
@@ -77,6 +78,7 @@ describe('CookModeContainer', () => {
     vi.mocked(useRemoveIngredient).mockReturnValue(mockMutation as ReturnType<typeof useRemoveIngredient>)
     vi.mocked(useAddDish).mockReturnValue(mockMutation as ReturnType<typeof useAddDish>)
     vi.mocked(useRemoveDish).mockReturnValue(mockMutation as ReturnType<typeof useRemoveDish>)
+    vi.mocked(useUpdateDish).mockReturnValue(mockMutation as ReturnType<typeof useUpdateDish>)
     vi.mocked(useSuggestions).mockReturnValue({ data: { suggestions: [], kbUnavailable: false }, isLoading: false } as ReturnType<typeof useSuggestions>)
     vi.mocked(useIngredientSearch).mockReturnValue({ data: [], isLoading: false } as ReturnType<typeof useIngredientSearch>)
     vi.mocked(useIngredientDetail).mockReturnValue({ data: undefined, isLoading: false, error: null } as ReturnType<typeof useIngredientDetail>)

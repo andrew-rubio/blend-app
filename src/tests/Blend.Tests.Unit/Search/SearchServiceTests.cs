@@ -301,6 +301,8 @@ public class SearchServiceTests
         var mockRepo = new Mock<IRepository<Recipe>>();
         mockRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), null, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([recipe]);
+        mockRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), null, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([recipe]);
 
         var mockPref = new Mock<IPreferenceService>();
         mockPref.Setup(p => p.GetUserPreferencesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -399,6 +401,8 @@ public class SearchServiceTests
         var mockRepo = new Mock<IRepository<Recipe>>();
         mockRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), null, It.IsAny<CancellationToken>()))
                 .ReturnsAsync([recipe]);
+        mockRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), null, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([recipe]);
 
         var mockPref = new Mock<IPreferenceService>();
         mockPref.Setup(p => p.GetUserPreferencesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -431,6 +435,8 @@ public class SearchServiceTests
         var mockRepo = new Mock<IRepository<Recipe>>();
         mockRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), null, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(recipes);
+        mockRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), null, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(recipes);
 
         var mockPref = new Mock<IPreferenceService>();
         mockPref.Setup(p => p.GetUserPreferencesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -453,6 +459,8 @@ public class SearchServiceTests
 
         var mockRepo = new Mock<IRepository<Recipe>>();
         mockRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), null, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(recipes);
+        mockRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), null, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(recipes);
 
         var mockPref = new Mock<IPreferenceService>();
@@ -531,6 +539,8 @@ public class SearchServiceTests
         var mockActivity = new Mock<IRepository<Activity>>();
         mockActivity.Setup(a => a.GetByQueryAsync(It.IsAny<string>(), "user-1", It.IsAny<CancellationToken>()))
                     .ReturnsAsync(activities);
+        mockActivity.Setup(a => a.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), "user-1", It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(activities);
 
         var mockPref = new Mock<IPreferenceService>();
         var svc = CreateService(activityRepo: mockActivity.Object, preferences: mockPref.Object);
@@ -556,6 +566,8 @@ public class SearchServiceTests
     {
         var mockActivity = new Mock<IRepository<Activity>>();
         mockActivity.Setup(a => a.GetByQueryAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync([]);
+        mockActivity.Setup(a => a.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync([]);
 
         var mockPref = new Mock<IPreferenceService>();

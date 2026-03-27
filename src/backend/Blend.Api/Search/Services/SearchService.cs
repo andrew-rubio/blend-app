@@ -151,15 +151,16 @@ public sealed class SearchService : ISearchService
         }
 
         var clampedSize = Math.Clamp(pageSize, 1, 50);
-        var safeUserId = userId.Replace("'", string.Empty);
 
         var query =
             $"SELECT TOP {clampedSize} * FROM c " +
-            $"WHERE c.userId = '{safeUserId}' " +
+            "WHERE c.userId = @userId " +
             "AND c.type = 'Viewed' " +
             "ORDER BY c.timestamp DESC";
 
-        return await _activityRepository.GetByQueryAsync(query, partitionKey: userId, ct);
+        var parameters = new Dictionary<string, object> { ["@userId"] = userId };
+
+        return await _activityRepository.GetByQueryAsync(query, parameters, partitionKey: userId, ct);
     }
 
     // ── Private helpers ────────────────────────────────────────────────────────
@@ -225,20 +226,24 @@ public sealed class SearchService : ISearchService
         }
 
         var conditions = new List<string> { "c.isPublic = true" };
+        var parameters = new Dictionary<string, object>();
+        var paramIndex = 0;
 
         // ── Text search with partial matching (EXPL-15) ────────────────────────
         if (!string.IsNullOrWhiteSpace(request.Q))
         {
             var tokens = Tokenise(request.Q);
-            var tokenClauses = tokens.Select(token =>
+            var tokenClauses = new List<string>();
+            foreach (var token in tokens)
             {
-                var safeToken = token.Replace("'", string.Empty);
-                return
-                    $"(CONTAINS(LOWER(c.title), '{safeToken}', true) " +
-                    $"OR CONTAINS(LOWER(c.description), '{safeToken}', true) " +
+                var paramName = $"@token{paramIndex++}";
+                parameters[paramName] = token.ToLowerInvariant();
+                tokenClauses.Add(
+                    $"(CONTAINS(LOWER(c.title), {paramName}, true) " +
+                    $"OR CONTAINS(LOWER(c.description), {paramName}, true) " +
                     $"OR EXISTS(SELECT VALUE i FROM i IN c.ingredients " +
-                    $"WHERE CONTAINS(LOWER(i.ingredientName), '{safeToken}', true)))";
-            });
+                    $"WHERE CONTAINS(LOWER(i.ingredientName), {paramName}, true)))");
+            }
             conditions.Add($"({string.Join(" OR ", tokenClauses)})");
         }
 
@@ -248,8 +253,13 @@ public sealed class SearchService : ISearchService
             var cuisineList = ParseCommaSeparated(request.Cuisines);
             if (cuisineList.Count > 0)
             {
-                var cuisineClauses = cuisineList
-                    .Select(c => $"LOWER(c.cuisineType) = '{c.Replace("'", string.Empty).ToLowerInvariant()}'");
+                var cuisineClauses = new List<string>();
+                foreach (var cuisine in cuisineList)
+                {
+                    var paramName = $"@cuisine{paramIndex++}";
+                    parameters[paramName] = cuisine.ToLowerInvariant();
+                    cuisineClauses.Add($"LOWER(c.cuisineType) = {paramName}");
+                }
                 conditions.Add($"({string.Join(" OR ", cuisineClauses)})");
             }
         }
@@ -260,8 +270,13 @@ public sealed class SearchService : ISearchService
             var dietList = ParseCommaSeparated(request.Diets);
             if (dietList.Count > 0)
             {
-                var dietClauses = dietList
-                    .Select(d => $"ARRAY_CONTAINS(c.tags, '{d.Replace("'", string.Empty).ToLowerInvariant()}', true)");
+                var dietClauses = new List<string>();
+                foreach (var diet in dietList)
+                {
+                    var paramName = $"@diet{paramIndex++}";
+                    parameters[paramName] = diet.ToLowerInvariant();
+                    dietClauses.Add($"ARRAY_CONTAINS(c.tags, {paramName}, true)");
+                }
                 conditions.Add($"({string.Join(" OR ", dietClauses)})");
             }
         }
@@ -272,8 +287,13 @@ public sealed class SearchService : ISearchService
             var dishList = ParseCommaSeparated(request.DishTypes);
             if (dishList.Count > 0)
             {
-                var dishClauses = dishList
-                    .Select(d => $"LOWER(c.dishType) = '{d.Replace("'", string.Empty).ToLowerInvariant()}'");
+                var dishClauses = new List<string>();
+                foreach (var dish in dishList)
+                {
+                    var paramName = $"@dish{paramIndex++}";
+                    parameters[paramName] = dish.ToLowerInvariant();
+                    dishClauses.Add($"LOWER(c.dishType) = {paramName}");
+                }
                 conditions.Add($"({string.Join(" OR ", dishClauses)})");
             }
         }
@@ -281,7 +301,8 @@ public sealed class SearchService : ISearchService
         // ── Max ready time filter ──────────────────────────────────────────────
         if (request.MaxReadyTime.HasValue)
         {
-            conditions.Add($"(c.prepTime + c.cookTime) <= {request.MaxReadyTime.Value}");
+            parameters["@maxReadyTime"] = request.MaxReadyTime.Value;
+            conditions.Add("(c.prepTime + c.cookTime) <= @maxReadyTime");
         }
 
         var whereClause = string.Join(" AND ", conditions);
@@ -290,7 +311,7 @@ public sealed class SearchService : ISearchService
         IReadOnlyList<Recipe> recipes;
         try
         {
-            recipes = await _recipeRepository.GetByQueryAsync(query, partitionKey: null, ct);
+            recipes = await _recipeRepository.GetByQueryAsync(query, parameters, partitionKey: null, ct);
         }
         catch (Exception ex)
         {

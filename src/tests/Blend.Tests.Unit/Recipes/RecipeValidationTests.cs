@@ -197,6 +197,8 @@ public class RecipeValidationTests
         var mockRepo = new Mock<IRepository<Recipe>>();
         mockRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([recipe]);
+        mockRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([recipe]);
 
         var svc = CreateService(mockRepo.Object);
         var request = new UpdateRecipeRequest
@@ -240,6 +242,8 @@ public class RecipeValidationTests
 
         var mockRepo = new Mock<IRepository<Recipe>>();
         mockRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([recipe]);
+        mockRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([recipe]);
         mockRepo.Setup(r => r.UpdateAsync(It.IsAny<Recipe>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(updatedRecipe);

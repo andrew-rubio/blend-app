@@ -76,6 +76,17 @@ public interface ICookSessionService
         CancellationToken ct = default);
 
     /// <summary>
+    /// Updates a dish's name and/or notes within the session.
+    /// Returns the updated session, or <c>null</c> if the session or dish was not found.
+    /// </summary>
+    Task<CookingSession?> UpdateDishAsync(
+        string sessionId,
+        string userId,
+        string dishId,
+        UpdateDishRequest request,
+        CancellationToken ct = default);
+
+    /// <summary>
     /// Marks the session as <see cref="CookingSessionStatus.Completed"/>.
     /// Returns the updated session, or <c>null</c> if not found.
     /// </summary>

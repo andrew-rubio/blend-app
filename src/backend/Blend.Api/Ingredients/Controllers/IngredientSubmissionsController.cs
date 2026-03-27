@@ -94,9 +94,9 @@ public sealed class IngredientSubmissionsController : ControllerBase
             return ServiceUnavailableProblem();
         }
 
-        var safeUserId = Sanitize(userId);
-        var query = $"SELECT * FROM c WHERE c.contentType = 'IngredientSubmission' AND c.submittedByUserId = '{safeUserId}' ORDER BY c.createdAt DESC";
-        var submissions = await _contentRepository.GetByQueryAsync(query, null, ct);
+        var query = "SELECT * FROM c WHERE c.contentType = 'IngredientSubmission' AND c.submittedByUserId = @userId ORDER BY c.createdAt DESC";
+        var parameters = new Dictionary<string, object> { ["@userId"] = userId };
+        var submissions = await _contentRepository.GetByQueryAsync(query, parameters, null, ct);
 
         var response = submissions.Select(IngredientSubmissionResponse.FromEntity).ToList();
         return Ok(response);
@@ -106,7 +106,7 @@ public sealed class IngredientSubmissionsController : ControllerBase
 
     private string? GetUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-    private static string Sanitize(string value) => value.Replace("'", string.Empty);
+    // Sanitize method removed — parameterized queries are used instead.
 
     private IActionResult UnauthorizedProblem() =>
         Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Unauthorized",

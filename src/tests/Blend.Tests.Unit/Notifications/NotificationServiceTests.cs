@@ -124,6 +124,8 @@ public class NotificationServiceTests
 
         mock.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((IReadOnlyList<Notification>)unreadNotifications);
+        mock.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IReadOnlyList<Notification>)unreadNotifications);
 
         var svc = CreateService(mock.Object);
         var count = await svc.GetUnreadCountAsync("user-1");
@@ -231,6 +233,8 @@ public class NotificationServiceTests
             new() { Id = "n2", RecipientUserId = "user-1", Read = false, Title = "T", Message = "M", CreatedAt = DateTimeOffset.UtcNow },
         };
         mock.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IReadOnlyList<Notification>)unread);
+        mock.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((IReadOnlyList<Notification>)unread);
         mock.Setup(r => r.PatchAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Notification());

@@ -13,12 +13,14 @@ export const settingsQueryKeys = {
  */
 export function useAppSettings() {
   const setUnitSystem = useSettingsStore((s) => s.setUnitSystem)
+  const setTheme = useSettingsStore((s) => s.setTheme)
 
   return useQuery({
     queryKey: settingsQueryKeys.appSettings(),
     queryFn: async () => {
       const settings = await getSettingsApi()
       setUnitSystem(settings.unitSystem)
+      if (settings.theme) setTheme(settings.theme)
       return settings
     },
   })
@@ -30,11 +32,13 @@ export function useAppSettings() {
 export function useUpdateSettings() {
   const queryClient = useQueryClient()
   const setUnitSystem = useSettingsStore((s) => s.setUnitSystem)
+  const setTheme = useSettingsStore((s) => s.setTheme)
 
   return useMutation({
     mutationFn: (data: UpdateSettingsRequest) => updateSettingsApi(data),
     onSuccess: (updated) => {
       setUnitSystem(updated.unitSystem)
+      if (updated.theme) setTheme(updated.theme)
       void queryClient.invalidateQueries({ queryKey: settingsQueryKeys.appSettings() })
     },
   })

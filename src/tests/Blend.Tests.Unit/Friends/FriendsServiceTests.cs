@@ -80,6 +80,8 @@ public class FriendsServiceTests
         var connRepo = MockConnectionRepo();
         connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Connection>());
+        connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Connection>());
 
         var svc = CreateService(connRepo, userManager: userMgr);
         var (_, result) = await svc.SendFriendRequestAsync("user-1", "user-2");
@@ -101,6 +103,8 @@ public class FriendsServiceTests
         var connRepo = MockConnectionRepo();
         connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), "user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
+        connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), "user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
 
         var svc = CreateService(connRepo, userManager: userMgr);
         var (_, result) = await svc.SendFriendRequestAsync("user-1", "user-2");
@@ -121,6 +125,8 @@ public class FriendsServiceTests
 
         var connRepo = MockConnectionRepo();
         connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), "user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), "user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
 
         var svc = CreateService(connRepo, userManager: userMgr);
@@ -145,6 +151,8 @@ public class FriendsServiceTests
         var connRepo = MockConnectionRepo();
         connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), "user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
+        connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), "user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
 
         var svc = CreateService(connRepo, userManager: userMgr);
         var (_, result) = await svc.SendFriendRequestAsync("user-1", "user-2");
@@ -167,6 +175,8 @@ public class FriendsServiceTests
 
         var connRepo = MockConnectionRepo();
         connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), "user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), "user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
         connRepo.Setup(r => r.DeleteAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
@@ -192,6 +202,8 @@ public class FriendsServiceTests
 
         var connRepo = MockConnectionRepo();
         connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), "user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Connection>());
+        connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), "user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Connection>());
 
         var createdDocs = new List<Connection>();
@@ -238,6 +250,8 @@ public class FriendsServiceTests
 
         var connRepo = MockConnectionRepo();
         connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), "user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Connection>());
+        connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), "user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Connection>());
         connRepo.Setup(r => r.CreateAsync(It.IsAny<Connection>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Connection c, CancellationToken _) => c);
@@ -398,6 +412,8 @@ public class FriendsServiceTests
         var connRepo = MockConnectionRepo();
         connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), "user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Connection>());
+        connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), "user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Connection>());
 
         var svc = CreateService(connRepo);
         var result = await svc.RemoveFriendAsync("user-1", "user-2");
@@ -410,6 +426,8 @@ public class FriendsServiceTests
         var connRepo = MockConnectionRepo();
         var conn = MakeConnection("conn-1", "user-1", "user-2", ConnectionStatus.Accepted);
         connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), "user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Connection> { conn });
+        connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), "user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Connection> { conn });
 
         var deletedKeys = new List<(string Id, string Pk)>();
@@ -519,9 +537,16 @@ public class FriendsServiceTests
             {
                 new() { Id = "user-2", DisplayName = "Alice Other" },
             });
+        userRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<BlendUser>
+            {
+                new() { Id = "user-2", DisplayName = "Alice Other" },
+            });
 
         var connRepo = MockConnectionRepo();
         connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), "user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Connection>());
+        connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), "user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Connection>());
 
         var svc = CreateService(connRepo, userRepo: userRepo);
@@ -540,10 +565,17 @@ public class FriendsServiceTests
             {
                 new() { Id = "user-2", DisplayName = "Bob" },
             });
+        userRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<BlendUser>
+            {
+                new() { Id = "user-2", DisplayName = "Bob" },
+            });
 
         var connRepo = MockConnectionRepo();
         var conn = MakeConnection("conn-1", "user-1", "user-2", ConnectionStatus.Accepted);
         connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), "user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Connection> { conn });
+        connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), "user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Connection> { conn });
 
         var svc = CreateService(connRepo, userRepo: userRepo);
@@ -562,10 +594,17 @@ public class FriendsServiceTests
             {
                 new() { Id = "user-2", DisplayName = "Carol" },
             });
+        userRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<BlendUser>
+            {
+                new() { Id = "user-2", DisplayName = "Carol" },
+            });
 
         var connRepo = MockConnectionRepo();
         var conn = MakeConnection("conn-1", "user-1", "user-2", ConnectionStatus.Pending);
         connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), "user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Connection> { conn });
+        connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), "user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Connection> { conn });
 
         var svc = CreateService(connRepo, userRepo: userRepo);
@@ -584,9 +623,16 @@ public class FriendsServiceTests
             {
                 new() { Id = "user-2", DisplayName = "Dan" },
             });
+        userRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<BlendUser>
+            {
+                new() { Id = "user-2", DisplayName = "Dan" },
+            });
 
         var connRepo = MockConnectionRepo();
         connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), "user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Connection>());
+        connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), "user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Connection>());
 
         var svc = CreateService(connRepo, userRepo: userRepo);
@@ -615,6 +661,8 @@ public class FriendsServiceTests
         var connRepo = MockConnectionRepo();
         connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), "user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
+        connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), "user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
 
         var svc = CreateService(connRepo, userManager: userMgr);
         var (_, result) = await svc.SendFriendRequestAsync("user-1", "user-2");
@@ -637,6 +685,8 @@ public class FriendsServiceTests
 
         var connRepo = MockConnectionRepo();
         connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), "user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        connRepo.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), "user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
         connRepo.Setup(r => r.DeleteAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);

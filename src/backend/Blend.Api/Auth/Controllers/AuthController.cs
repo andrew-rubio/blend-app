@@ -35,7 +35,6 @@ public sealed class AuthController : ControllerBase
     [HttpPost("register")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.DisplayName) ||
@@ -51,10 +50,11 @@ public sealed class AuthController : ControllerBase
         var existing = await _userManager.FindByEmailAsync(request.Email);
         if (existing is not null)
         {
+            // Return generic 400 to prevent account enumeration (do not reveal email existence).
             return Problem(
-                statusCode: StatusCodes.Status409Conflict,
-                title: "Conflict",
-                detail: "Email already registered.");
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Registration failed",
+                detail: "Unable to complete registration. Please check your details and try again.");
         }
 
         var user = new BlendUser

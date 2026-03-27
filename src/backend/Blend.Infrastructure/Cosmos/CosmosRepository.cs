@@ -40,6 +40,22 @@ public sealed class CosmosRepository<T> : IRepository<T> where T : class
     public async Task<IReadOnlyList<T>> GetByQueryAsync(string query, string? partitionKey = null, CancellationToken cancellationToken = default)
     {
         var queryDefinition = new QueryDefinition(query);
+        return await ExecuteQueryAsync(queryDefinition, partitionKey, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<T>> GetByQueryAsync(string query, IReadOnlyDictionary<string, object> parameters, string? partitionKey = null, CancellationToken cancellationToken = default)
+    {
+        var queryDefinition = new QueryDefinition(query);
+        foreach (var (name, value) in parameters)
+        {
+            queryDefinition = queryDefinition.WithParameter(name, value);
+        }
+        return await ExecuteQueryAsync(queryDefinition, partitionKey, cancellationToken);
+    }
+
+    private async Task<IReadOnlyList<T>> ExecuteQueryAsync(QueryDefinition queryDefinition, string? partitionKey, CancellationToken cancellationToken)
+    {
         var options = partitionKey is not null
             ? new QueryRequestOptions { PartitionKey = new PartitionKey(partitionKey) }
             : null;

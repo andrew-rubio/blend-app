@@ -8,6 +8,7 @@ import { createQueryClient } from './queryClient'
 import { RootErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { ToastProvider } from '@/components/ui/Toast'
 import { OfflineBanner } from '@/components/ui/OfflineBanner'
+import { ThemeProvider } from '@/components/ThemeProvider'
 
 interface ProvidersProps {
   children: ReactNode
@@ -20,6 +21,7 @@ export function Providers({ children }: ProvidersProps) {
     <RootErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ToastProvider>
+          <ThemeProvider />
           <OfflineBanner />
           {children}
         </ToastProvider>

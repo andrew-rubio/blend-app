@@ -47,6 +47,8 @@ public class AdminContentServiceTests
                 It.IsAny<string?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync((IReadOnlyList<Content>)items);
+        mock.Setup(r => r.GetByQueryAsync(It.Is<string>(q => q.Contains("FeaturedRecipe")), It.IsAny<IReadOnlyDictionary<string, object>>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IReadOnlyList<Content>)items);
 
         var svc = CreateService(mock.Object);
         var result = await svc.GetFeaturedRecipesAsync();

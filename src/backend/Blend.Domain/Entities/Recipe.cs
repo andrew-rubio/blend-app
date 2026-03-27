@@ -31,6 +31,28 @@ public sealed class RecipeDirection
     public string? MediaUrl { get; init; }
 }
 
+/// <summary>Aggregate nutritional information for a recipe.</summary>
+public sealed class RecipeNutritionInfo
+{
+    [JsonPropertyName("calories")]
+    public double? Calories { get; init; }
+
+    [JsonPropertyName("protein")]
+    public double? Protein { get; init; }
+
+    [JsonPropertyName("carbs")]
+    public double? Carbs { get; init; }
+
+    [JsonPropertyName("fat")]
+    public double? Fat { get; init; }
+
+    [JsonPropertyName("fiber")]
+    public double? Fiber { get; init; }
+
+    [JsonPropertyName("sugar")]
+    public double? Sugar { get; init; }
+}
+
 /// <summary>A user-generated recipe.</summary>
 public sealed class Recipe
 {
@@ -75,6 +97,9 @@ public sealed class Recipe
 
     [JsonPropertyName("photos")]
     public IReadOnlyList<string> Photos { get; init; } = [];
+
+    [JsonPropertyName("nutritionInfo")]
+    public RecipeNutritionInfo? NutritionInfo { get; init; }
 
     [JsonPropertyName("isPublic")]
     public bool IsPublic { get; init; }

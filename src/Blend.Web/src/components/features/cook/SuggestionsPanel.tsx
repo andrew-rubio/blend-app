@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useMemo } from 'react'
 import { useSuggestions } from '@/hooks/useCookMode'
 import type { SmartSuggestion } from '@/types'
 
@@ -11,6 +12,21 @@ export interface SuggestionsPanelProps {
 
 export function SuggestionsPanel({ sessionId, dishId, onAdd }: SuggestionsPanelProps) {
   const { data, isLoading } = useSuggestions(sessionId, dishId)
+  const [activeCategory, setActiveCategory] = useState<string | null>(null)
+
+  const suggestions = useMemo(() => data?.suggestions ?? [], [data?.suggestions])
+
+  const categories = useMemo(() => {
+    const cats = new Set<string>()
+    for (const s of suggestions) {
+      if (s.category) cats.add(s.category)
+    }
+    return Array.from(cats).sort()
+  }, [suggestions])
+
+  const filtered = activeCategory
+    ? suggestions.filter((s) => s.category === activeCategory)
+    : suggestions
 
   if (isLoading) {
     return (
@@ -33,14 +49,44 @@ export function SuggestionsPanel({ sessionId, dishId, onAdd }: SuggestionsPanelP
     )
   }
 
-  const suggestions = data?.suggestions ?? []
-
   return (
     <div className="flex flex-col gap-2 p-4" data-testid="suggestions-panel">
-      {suggestions.length === 0 ? (
+      {categories.length > 1 && (
+        <div className="flex flex-wrap gap-1 pb-1" data-testid="suggestion-filters">
+          <button
+            type="button"
+            onClick={() => setActiveCategory(null)}
+            className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+              activeCategory === null
+                ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+            }`}
+            data-testid="suggestion-filter-all"
+          >
+            All
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setActiveCategory(cat)}
+              className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                activeCategory === cat
+                  ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+              }`}
+              data-testid={`suggestion-filter-${cat}`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {filtered.length === 0 ? (
         <p className="text-sm text-gray-500 dark:text-gray-400" data-testid="suggestions-empty">No suggestions available</p>
       ) : (
-        suggestions.map((suggestion) => (
+        filtered.map((suggestion) => (
           <button
             key={suggestion.ingredientId}
             type="button"

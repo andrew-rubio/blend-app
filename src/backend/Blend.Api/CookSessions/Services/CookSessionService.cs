@@ -339,6 +339,52 @@ public sealed class CookSessionService : ICookSessionService
         return await _sessionRepository.UpdateAsync(updated, sessionId, userId, ct);
     }
 
+    /// <inheritdoc/>
+    public async Task<CookingSession?> UpdateDishAsync(
+        string sessionId,
+        string userId,
+        string dishId,
+        UpdateDishRequest request,
+        CancellationToken ct = default)
+    {
+        if (_sessionRepository is null)
+        {
+            return null;
+        }
+
+        var session = await GetSessionAsync(sessionId, userId, ct);
+        if (session is null)
+        {
+            return null;
+        }
+
+        var dish = session.Dishes.FirstOrDefault(d => d.DishId == dishId);
+        if (dish is null)
+        {
+            return null;
+        }
+
+        var updatedDishes = session.Dishes.Select(d =>
+        {
+            if (d.DishId != dishId)
+            {
+                return d;
+            }
+
+            return new CookingSessionDish
+            {
+                DishId = d.DishId,
+                Name = request.Name ?? d.Name,
+                CuisineType = d.CuisineType,
+                Ingredients = d.Ingredients,
+                Notes = request.Notes ?? d.Notes,
+            };
+        }).ToList();
+
+        var updated = CloneSession(session, dishes: updatedDishes, updatedAt: DateTimeOffset.UtcNow);
+        return await _sessionRepository.UpdateAsync(updated, sessionId, userId, ct);
+    }
+
     // ── Lifecycle transitions ─────────────────────────────────────────────────
 
     /// <inheritdoc/>

@@ -335,6 +335,40 @@ public sealed class CookSessionsController : ControllerBase
         return Ok(session);
     }
 
+    // ── PUT /api/v1/cook-sessions/{id}/dishes/{dishId} ────────────────────────
+
+    /// <summary>Updates a dish's name and/or notes within the session.</summary>
+    [HttpPut("{id}/dishes/{dishId}")]
+    [ProducesResponseType(typeof(CookingSession), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> UpdateDish(
+        string id,
+        string dishId,
+        [FromBody] UpdateDishRequest request,
+        CancellationToken ct)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+        {
+            return UnauthorizedProblem();
+        }
+
+        if (_cookSessionService is null)
+        {
+            return ServiceUnavailableProblem();
+        }
+
+        var session = await _cookSessionService.UpdateDishAsync(id, userId, dishId, request, ct);
+        if (session is null)
+        {
+            return NotFoundProblem(id);
+        }
+
+        return Ok(session);
+    }
+
     // ── POST /api/v1/cook-sessions/{id}/complete ──────────────────────────────
 
     /// <summary>Marks the session as completed, triggering the wrap-up flow.</summary>

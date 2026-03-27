@@ -50,6 +50,35 @@ export function OverviewTab({ recipe }: OverviewTabProps) {
         </div>
       )}
 
+      {/* Nutritional info */}
+      {recipe.nutritionInfo && (
+        <div>
+          <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            Nutrition per serving
+          </h3>
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+            {recipe.nutritionInfo.calories != null && (
+              <NutrientCard label="Calories" value={recipe.nutritionInfo.calories} unit="kcal" />
+            )}
+            {recipe.nutritionInfo.protein != null && (
+              <NutrientCard label="Protein" value={recipe.nutritionInfo.protein} unit="g" />
+            )}
+            {recipe.nutritionInfo.carbs != null && (
+              <NutrientCard label="Carbs" value={recipe.nutritionInfo.carbs} unit="g" />
+            )}
+            {recipe.nutritionInfo.fat != null && (
+              <NutrientCard label="Fat" value={recipe.nutritionInfo.fat} unit="g" />
+            )}
+            {recipe.nutritionInfo.fiber != null && (
+              <NutrientCard label="Fiber" value={recipe.nutritionInfo.fiber} unit="g" />
+            )}
+            {recipe.nutritionInfo.sugar != null && (
+              <NutrientCard label="Sugar" value={recipe.nutritionInfo.sugar} unit="g" />
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Intolerance badges */}
       {recipe.intolerances.length > 0 && (
         <div>
@@ -108,5 +137,17 @@ function Badge({ label, color }: { label: string; color: 'green' | 'blue' }) {
     >
       {label}
     </span>
+  )
+}
+
+function NutrientCard({ label, value, unit }: { label: string; value: number; unit: string }) {
+  return (
+    <div className="flex flex-col items-center rounded-lg border border-gray-200 p-2 text-center dark:border-gray-700">
+      <span className="text-lg font-bold text-gray-900 dark:text-white">
+        {Math.round(value)}
+      </span>
+      <span className="text-xs text-gray-500 dark:text-gray-400">{unit}</span>
+      <span className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{label}</span>
+    </div>
   )
 }

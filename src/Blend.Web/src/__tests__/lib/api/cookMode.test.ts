@@ -52,50 +52,50 @@ describe('cookMode API', () => {
     } as Response)
   }
 
-  it('createSessionApi POSTs to /sessions', async () => {
+  it('createSessionApi POSTs to /cook-sessions', async () => {
     mockFetch.mockReturnValue(okResponse(mockSession))
     const result = await createSessionApi({})
     expect(result).toEqual(mockSession)
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('/sessions'),
+      expect.stringContaining('/cook-sessions'),
       expect.objectContaining({ method: 'POST' })
     )
   })
 
-  it('getActiveSessionApi GETs /sessions/active', async () => {
+  it('getActiveSessionApi GETs /cook-sessions/active', async () => {
     mockFetch.mockReturnValue(okResponse(mockSession))
     const result = await getActiveSessionApi()
     expect(result).toEqual(mockSession)
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('/sessions/active'),
+      expect.stringContaining('/cook-sessions/active'),
       expect.any(Object)
     )
   })
 
-  it('getSessionApi GETs /sessions/:id', async () => {
+  it('getSessionApi GETs /cook-sessions/:id', async () => {
     mockFetch.mockReturnValue(okResponse(mockSession))
     const result = await getSessionApi('session-1')
     expect(result).toEqual(mockSession)
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('/sessions/session-1'),
+      expect.stringContaining('/cook-sessions/session-1'),
       expect.any(Object)
     )
   })
 
-  it('addIngredientApi POSTs to /sessions/:id/ingredients', async () => {
+  it('addIngredientApi POSTs to /cook-sessions/:id/ingredients', async () => {
     mockFetch.mockReturnValue(okResponse(mockSession))
     await addIngredientApi('session-1', { ingredientId: 'ing-1', name: 'Garlic' })
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('/sessions/session-1/ingredients'),
+      expect.stringContaining('/cook-sessions/session-1/ingredients'),
       expect.objectContaining({ method: 'POST' })
     )
   })
 
-  it('removeIngredientApi DELETEs /sessions/:id/ingredients/:ingId', async () => {
+  it('removeIngredientApi DELETEs /cook-sessions/:id/ingredients/:ingId', async () => {
     mockFetch.mockReturnValue(okResponse(mockSession))
     await removeIngredientApi('session-1', 'ing-1')
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('/sessions/session-1/ingredients/ing-1'),
+      expect.stringContaining('/cook-sessions/session-1/ingredients/ing-1'),
       expect.objectContaining({ method: 'DELETE' })
     )
   })
@@ -109,30 +109,30 @@ describe('cookMode API', () => {
     )
   })
 
-  it('addDishApi POSTs to /sessions/:id/dishes', async () => {
+  it('addDishApi POSTs to /cook-sessions/:id/dishes', async () => {
     mockFetch.mockReturnValue(okResponse(mockSession))
     await addDishApi('session-1', { name: 'Pasta' })
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('/sessions/session-1/dishes'),
+      expect.stringContaining('/cook-sessions/session-1/dishes'),
       expect.objectContaining({ method: 'POST' })
     )
   })
 
-  it('removeDishApi DELETEs /sessions/:id/dishes/:dishId', async () => {
+  it('removeDishApi DELETEs /cook-sessions/:id/dishes/:dishId', async () => {
     mockFetch.mockReturnValue(okResponse(mockSession))
     await removeDishApi('session-1', 'dish-1')
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('/sessions/session-1/dishes/dish-1'),
+      expect.stringContaining('/cook-sessions/session-1/dishes/dish-1'),
       expect.objectContaining({ method: 'DELETE' })
     )
   })
 
-  it('pauseSessionApi POSTs to /sessions/:id/pause', async () => {
+  it('pauseSessionApi POSTs to /cook-sessions/:id/pause', async () => {
     mockFetch.mockReturnValue(okResponse({ ...mockSession, status: 'Paused' }))
     const result = await pauseSessionApi('session-1')
     expect(result.status).toBe('Paused')
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('/sessions/session-1/pause'),
+      expect.stringContaining('/cook-sessions/session-1/pause'),
       expect.objectContaining({ method: 'POST' })
     )
   })
@@ -149,7 +149,7 @@ describe('cookMode API', () => {
     const result = await getSuggestionsApi('session-1')
     expect(result).toEqual(mockResult)
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('/sessions/session-1/suggestions'),
+      expect.stringContaining('/cook-sessions/session-1/suggestions'),
       expect.any(Object)
     )
   })
@@ -177,7 +177,7 @@ describe('cookMode API', () => {
     const result = await getIngredientDetailApi('session-1', 'ing-1')
     expect(result.name).toBe('Garlic')
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('/sessions/session-1/ingredients/ing-1/detail'),
+      expect.stringContaining('/cook-sessions/session-1/ingredients/ing-1/detail'),
       expect.any(Object)
     )
   })

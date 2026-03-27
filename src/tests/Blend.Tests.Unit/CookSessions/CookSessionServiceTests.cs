@@ -80,6 +80,8 @@ public class CookSessionServiceTests
                 It.IsAny<string?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(session is null ? [] : (IReadOnlyList<CookingSession>)[session]);
+        mock.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(session is null ? [] : (IReadOnlyList<CookingSession>)[session]);
         return mock;
     }
 
@@ -387,6 +389,8 @@ public class CookSessionServiceTests
                 It.IsAny<string>(),
                 It.IsAny<string?>(),
                 It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+        repoMock.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
         var svc = CreateService(sessionRepo: repoMock.Object);
 

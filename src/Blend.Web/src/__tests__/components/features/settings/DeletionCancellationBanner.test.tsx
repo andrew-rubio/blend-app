@@ -1,7 +1,7 @@
 import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import type { UnitSystem } from '@/types'
+import type { ThemeMode, UnitSystem } from '@/types'
 
 vi.mock('@/stores/settingsStore', () => ({
   useSettingsStore: vi.fn(),
@@ -20,15 +20,17 @@ const mockUseCancelAccountDeletion = vi.mocked(useCancelAccountDeletion)
 
 type MockSettingsState = {
   unitSystem: UnitSystem
+  theme: ThemeMode
   pendingDeletionDate: string | null
   setUnitSystem: () => void
+  setTheme: () => void
   setPendingDeletionDate: () => void
 }
 
 function mockStoreWith(pendingDeletionDate: string | null) {
   mockUseSettingsStore.mockImplementation(
     (selector: (s: MockSettingsState) => unknown) =>
-      selector({ unitSystem: 'Metric', pendingDeletionDate, setUnitSystem: vi.fn(), setPendingDeletionDate: vi.fn() })
+      selector({ unitSystem: 'Metric', theme: 'system', pendingDeletionDate, setUnitSystem: vi.fn(), setTheme: vi.fn(), setPendingDeletionDate: vi.fn() })
   )
 }
 

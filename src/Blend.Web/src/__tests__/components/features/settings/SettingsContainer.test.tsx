@@ -1,7 +1,7 @@
 import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import type { UnitSystem, User } from '@/types'
+import type { ThemeMode, UnitSystem, User } from '@/types'
 
 // ── Module mocks ──────────────────────────────────────────────────────────────
 
@@ -71,8 +71,10 @@ const mockUseAuthStore = vi.mocked(useAuthStore)
 
 type MockSettingsState = {
   unitSystem: UnitSystem
+  theme: ThemeMode
   pendingDeletionDate: string | null
   setUnitSystem: () => void
+  setTheme: () => void
   setPendingDeletionDate: () => void
 }
 
@@ -100,7 +102,7 @@ function setupDefaultMocks() {
   mockUseIngredientCatalogue.mockReturnValue({ data: undefined, isLoading: false } as ReturnType<typeof useIngredientCatalogue>)
   mockUseSettingsStore.mockImplementation(
     (selector: (s: MockSettingsState) => unknown) =>
-      selector({ unitSystem: 'Metric', pendingDeletionDate: null, setUnitSystem: vi.fn(), setPendingDeletionDate: vi.fn() })
+      selector({ unitSystem: 'Metric', theme: 'system', pendingDeletionDate: null, setUnitSystem: vi.fn(), setTheme: vi.fn(), setPendingDeletionDate: vi.fn() })
   )
   mockUseAuthStore.mockImplementation(
     (selector: (s: MockAuthState) => unknown) =>
@@ -178,7 +180,7 @@ describe('SettingsContainer', () => {
   it('shows deletion cancellation banner when pending deletion date is set', () => {
     mockUseSettingsStore.mockImplementation(
       (selector: (s: MockSettingsState) => unknown) =>
-        selector({ unitSystem: 'Metric', pendingDeletionDate: '2026-04-25T00:00:00Z', setUnitSystem: vi.fn(), setPendingDeletionDate: vi.fn() })
+        selector({ unitSystem: 'Metric', theme: 'system', pendingDeletionDate: '2026-04-25T00:00:00Z', setUnitSystem: vi.fn(), setTheme: vi.fn(), setPendingDeletionDate: vi.fn() })
     )
     render(<SettingsContainer />)
     expect(screen.getByText('Account deletion scheduled')).toBeDefined()

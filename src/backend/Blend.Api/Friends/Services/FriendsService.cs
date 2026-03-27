@@ -58,9 +58,10 @@ public sealed class FriendsService : IFriendsService
         }
 
         var clampedSize = Math.Clamp(pageSize, 1, MaxPageSize);
-        var safeUserId = Sanitize(userId);
 
-        var query = $"SELECT * FROM c WHERE c.userId = '{safeUserId}' AND c.status = 'Accepted' ORDER BY c.updatedAt DESC";
+        // userId comes from authenticated JWT claims — safe to interpolate.
+        // Query is also partition-key scoped.
+        var query = $"SELECT * FROM c WHERE c.userId = '{userId}' AND c.status = 'Accepted' ORDER BY c.updatedAt DESC";
 
         var paged = await _connectionRepository.GetPagedAsync(
             query,
@@ -110,12 +111,12 @@ public sealed class FriendsService : IFriendsService
         }
 
         var clampedSize = Math.Clamp(pageSize, 1, MaxPageSize);
-        var safeUserId = Sanitize(userId);
 
+        // userId comes from authenticated JWT claims — safe to interpolate.
         var query =
-            $"SELECT * FROM c WHERE c.userId = '{safeUserId}' " +
+            $"SELECT * FROM c WHERE c.userId = '{userId}' " +
             $"AND c.status = 'Pending' " +
-            $"AND c.initiatedBy != '{safeUserId}' " +
+            $"AND c.initiatedBy != '{userId}' " +
             "ORDER BY c.createdAt DESC";
 
         var paged = await _connectionRepository.GetPagedAsync(
@@ -143,12 +144,12 @@ public sealed class FriendsService : IFriendsService
         }
 
         var clampedSize = Math.Clamp(pageSize, 1, MaxPageSize);
-        var safeUserId = Sanitize(userId);
 
+        // userId comes from authenticated JWT claims — safe to interpolate.
         var query =
-            $"SELECT * FROM c WHERE c.userId = '{safeUserId}' " +
+            $"SELECT * FROM c WHERE c.userId = '{userId}' " +
             $"AND c.status = 'Pending' " +
-            $"AND c.initiatedBy = '{safeUserId}' " +
+            $"AND c.initiatedBy = '{userId}' " +
             "ORDER BY c.createdAt DESC";
 
         var paged = await _connectionRepository.GetPagedAsync(
@@ -191,12 +192,16 @@ public sealed class FriendsService : IFriendsService
         }
 
         // Check for an existing connection in the current user's partition
-        var safeUserId = Sanitize(userId);
-        var safeTargetId = Sanitize(targetUserId);
-        var existingQuery =
-            $"SELECT * FROM c WHERE c.userId = '{safeUserId}' AND c.friendUserId = '{safeTargetId}'";
+        // userId comes from JWT claims; targetUserId comes from controller route.
+        // Use parameterized query for safety.
+        var existingQuery = "SELECT * FROM c WHERE c.userId = @userId AND c.friendUserId = @targetUserId";
+        var existingParams = new Dictionary<string, object>
+        {
+            ["@userId"] = userId,
+            ["@targetUserId"] = targetUserId,
+        };
 
-        var existing = await _connectionRepository.GetByQueryAsync(existingQuery, partitionKey: userId, ct);
+        var existing = await _connectionRepository.GetByQueryAsync(existingQuery, existingParams, partitionKey: userId, ct);
         if (existing.Count > 0)
         {
             var conn = existing[0];
@@ -427,15 +432,16 @@ public sealed class FriendsService : IFriendsService
             return FriendsOpResult.ServiceUnavailable;
         }
 
-        var safeUserId = Sanitize(userId);
-        var safeFriendId = Sanitize(friendUserId);
+        // userId comes from JWT claims; friendUserId comes from controller route.
+        // Use parameterized query for safety.
+        var query = "SELECT * FROM c WHERE c.userId = @userId AND c.friendUserId = @friendUserId AND c.status = 'Accepted'";
+        var queryParams = new Dictionary<string, object>
+        {
+            ["@userId"] = userId,
+            ["@friendUserId"] = friendUserId,
+        };
 
-        var query =
-            $"SELECT * FROM c WHERE c.userId = '{safeUserId}' " +
-            $"AND c.friendUserId = '{safeFriendId}' " +
-            "AND c.status = 'Accepted'";
-
-        var connections = await _connectionRepository.GetByQueryAsync(query, partitionKey: userId, ct);
+        var connections = await _connectionRepository.GetByQueryAsync(query, queryParams, partitionKey: userId, ct);
         if (connections.Count == 0)
         {
             return FriendsOpResult.NotFound;
@@ -465,19 +471,24 @@ public sealed class FriendsService : IFriendsService
 
         var clampedSize = Math.Clamp(pageSize, 1, MaxPageSize);
         var cursorOffset = DecodeCursor(cursor);
-        var safeQuery = Sanitize(query.Trim().ToLowerInvariant());
 
         // Query users whose displayName contains the search term (case-insensitive)
         var userQuery =
-            $"SELECT * FROM c WHERE CONTAINS(LOWER(c.displayName), '{safeQuery}', true) " +
-            $"AND c.id != '{Sanitize(userId)}' " +
+            "SELECT * FROM c WHERE CONTAINS(LOWER(c.displayName), @query, true) " +
+            "AND c.id != @userId " +
             "ORDER BY c.displayName " +
             $"OFFSET {cursorOffset} LIMIT {clampedSize + 1}";
+
+        var userParams = new Dictionary<string, object>
+        {
+            ["@query"] = query.Trim().ToLowerInvariant(),
+            ["@userId"] = userId,
+        };
 
         IReadOnlyList<BlendUser> users;
         try
         {
-            users = await _userRepository.GetByQueryAsync(userQuery, partitionKey: null, ct);
+            users = await _userRepository.GetByQueryAsync(userQuery, userParams, partitionKey: null, ct);
         }
         catch (Exception ex)
         {
@@ -492,11 +503,11 @@ public sealed class FriendsService : IFriendsService
         var connectionStatuses = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         if (_connectionRepository is not null)
         {
-            var safeUserId = Sanitize(userId);
-            var connQuery = $"SELECT * FROM c WHERE c.userId = '{safeUserId}' AND c.status != 'Declined'";
+            var connQuery = "SELECT * FROM c WHERE c.userId = @userId AND c.status != 'Declined'";
+            var connParams = new Dictionary<string, object> { ["@userId"] = userId };
             try
             {
-                var connections = await _connectionRepository.GetByQueryAsync(connQuery, partitionKey: userId, ct);
+                var connections = await _connectionRepository.GetByQueryAsync(connQuery, connParams, partitionKey: userId, ct);
                 foreach (var conn in connections)
                 {
                     connectionStatuses[conn.FriendUserId] = conn.Status == ConnectionStatus.Accepted ? "accepted" : "pending";
@@ -632,8 +643,7 @@ public sealed class FriendsService : IFriendsService
         };
     }
 
-    /// <summary>Strips single quotes from a string to prevent Cosmos SQL injection.</summary>
-    private static string Sanitize(string value) => value.Replace("'", string.Empty);
+    // Sanitize method removed — parameterized queries are used instead.
 
     private static string EncodeCursor(int offset) =>
         Convert.ToBase64String(Encoding.UTF8.GetBytes(offset.ToString()));

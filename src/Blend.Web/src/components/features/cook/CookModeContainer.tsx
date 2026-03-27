@@ -9,6 +9,7 @@ import {
   useRemoveIngredient,
   useAddDish,
   useRemoveDish,
+  useUpdateDish,
   usePauseSession,
   useCompleteSession,
 } from '@/hooks/useCookMode'
@@ -44,6 +45,7 @@ export function CookModeContainer({ sessionId }: CookModeContainerProps) {
   const removeIngredient = useRemoveIngredient(sessionId)
   const addDish = useAddDish(sessionId)
   const removeDish = useRemoveDish(sessionId)
+  const updateDish = useUpdateDish(sessionId)
   const pauseSession = usePauseSession(sessionId)
   const completeSession = useCompleteSession(sessionId)
 
@@ -105,9 +107,20 @@ export function CookModeContainer({ sessionId }: CookModeContainerProps) {
     removeDish.mutate(dishId)
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  function handleRenameDish(_dishId: string, _name: string) {
-    // TODO: no API yet
+  function handleRenameDish(dishId: string, name: string) {
+    updateDish.mutate({ dishId, name })
+  }
+
+  function handleFindRecipes() {
+    if (!session) return
+    const allIngredients = [
+      ...session.addedIngredients,
+      ...session.dishes.flatMap((d) => d.ingredients),
+    ]
+    const names = [...new Set(allIngredients.map((i) => i.name))]
+    if (names.length > 0) {
+      router.push(`/explore?q=${encodeURIComponent(names.join(', '))}`)
+    }
   }
 
   function handlePause() {
@@ -123,8 +136,9 @@ export function CookModeContainer({ sessionId }: CookModeContainerProps) {
   }
 
   function handleSaveDishNotes(notes: string) {
-    // TODO: no API for notes yet; placeholder
-    void notes
+    if (activeDish) {
+      updateDish.mutate({ dishId: activeDish.dishId, notes })
+    }
   }
 
   return (
@@ -135,8 +149,13 @@ export function CookModeContainer({ sessionId }: CookModeContainerProps) {
         <SessionControls
           onPause={handlePause}
           onFinish={handleFinish}
+          onFindRecipes={handleFindRecipes}
           isPausing={pauseSession.isPending}
           isFinishing={completeSession.isPending}
+          hasIngredients={
+            session.addedIngredients.length > 0 ||
+            session.dishes.some((d) => d.ingredients.length > 0)
+          }
         />
       </div>
 

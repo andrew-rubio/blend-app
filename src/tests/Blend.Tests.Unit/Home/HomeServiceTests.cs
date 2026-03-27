@@ -23,6 +23,7 @@ public class HomeServiceTests
         IRepository<Content>? contentRepo = null,
         IRepository<Recipe>? recipeRepo = null,
         IRepository<Activity>? activityRepo = null,
+        IRepository<Connection>? connectionRepo = null,
         ICacheService? cacheService = null)
     {
         var prefs = preferenceService ?? new Mock<IPreferenceService>().Object;
@@ -34,6 +35,7 @@ public class HomeServiceTests
             contentRepo,
             recipeRepo,
             activityRepo,
+            connectionRepo,
             cacheService);
     }
 

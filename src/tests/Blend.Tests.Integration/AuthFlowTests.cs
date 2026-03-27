@@ -241,7 +241,7 @@ public class AuthFlowTests : IClassFixture<AuthTestWebApplicationFactory>
     }
 
     [Fact]
-    public async Task Register_WithExistingEmail_Returns409()
+    public async Task Register_WithExistingEmail_Returns400()
     {
         var client = CreateClient();
         var email = UniqueEmail();
@@ -251,7 +251,8 @@ public class AuthFlowTests : IClassFixture<AuthTestWebApplicationFactory>
         var secondResponse = await client.PostAsync("/api/v1/auth/register",
             JsonBody(new { displayName = "Bob2", email, password = "ValidPass1!" }));
 
-        Assert.Equal(HttpStatusCode.Conflict, secondResponse.StatusCode);
+        // Returns 400 (not 409) to prevent account enumeration
+        Assert.Equal(HttpStatusCode.BadRequest, secondResponse.StatusCode);
     }
 
     [Fact]

@@ -18,6 +18,28 @@ public interface IRepository<T> where T : class
     /// <param name="cancellationToken">Cancellation token.</param>
     Task<IReadOnlyList<T>> GetByQueryAsync(string query, string? partitionKey = null, CancellationToken cancellationToken = default);
 
+    /// <summary>Returns all entities matching the given parameterized SQL query.</summary>
+    /// <param name="query">The Cosmos DB SQL query with @parameter placeholders.</param>
+    /// <param name="parameters">Dictionary of parameter names (with @) to values.</param>
+    /// <param name="partitionKey">Optional partition key to scope the query.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<IReadOnlyList<T>> GetByQueryAsync(string query, IReadOnlyDictionary<string, object> parameters, string? partitionKey = null, CancellationToken cancellationToken = default)
+    {
+        // Default: substitute parameters into the query string so implementations
+        // that only understand the non-parameterized overload can parse actual values.
+        var resolved = query;
+        foreach (var kvp in parameters)
+        {
+            resolved = resolved.Replace(kvp.Key, kvp.Value switch
+            {
+                string s => $"'{s}'",
+                bool b => b ? "true" : "false",
+                _ => kvp.Value?.ToString() ?? "null",
+            });
+        }
+        return GetByQueryAsync(resolved, partitionKey, cancellationToken);
+    }
+
     /// <summary>Creates a new entity document.</summary>
     Task<T> CreateAsync(T entity, CancellationToken cancellationToken = default);
 

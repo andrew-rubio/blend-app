@@ -244,13 +244,10 @@ public sealed class MediaController : ControllerBase
                 case MediaUploadUse.Recipe when _recipeRepository is not null:
                 {
                     // Recipes use authorId as partition key, which is unknown at this point.
-                    // Use a cross-partition query to locate the recipe, then patch with its
-                    // authorId as the correct partition key.
-                    // entityId is a GUID-like identifier; strip any characters that could
-                    // affect the query to avoid accidental injection.
-                    var safeEntityId = entityId.Replace("'", string.Empty);
+                    // Use a cross-partition parameterized query to locate the recipe.
                     var results = await _recipeRepository.GetByQueryAsync(
-                        $"SELECT * FROM c WHERE c.id = '{safeEntityId}'",
+                        "SELECT * FROM c WHERE c.id = @entityId",
+                        new Dictionary<string, object> { ["@entityId"] = entityId },
                         partitionKey: null,
                         ct);
                     var recipe = results.FirstOrDefault();

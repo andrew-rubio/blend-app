@@ -165,6 +165,20 @@ app.UseCorrelationId();
 app.UseGlobalExceptionHandler();
 app.UseRequestLogging();
 
+// ── Security Headers ──────────────────────────────────────────────────────────
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+    if (!app.Environment.IsDevelopment())
+    {
+        context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+    }
+    await next();
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -198,16 +212,29 @@ app.MapHealthChecks("/ready", new HealthCheckOptions
     ResponseWriter = async (context, report) =>
     {
         context.Response.ContentType = "application/json";
-        var services = report.Entries.ToDictionary(
-            e => e.Key,
-            e => new { status = e.Value.Status.ToString(), description = e.Value.Description });
-        var result = System.Text.Json.JsonSerializer.Serialize(new
+        // In production, only expose aggregate status (no per-service detail to prevent info disclosure).
+        if (app.Environment.IsProduction())
         {
-            status = report.Status.ToString(),
-            timestamp = DateTime.UtcNow,
-            services
-        });
-        await context.Response.WriteAsync(result);
+            var result = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                status = report.Status.ToString(),
+                timestamp = DateTime.UtcNow,
+            });
+            await context.Response.WriteAsync(result);
+        }
+        else
+        {
+            var services = report.Entries.ToDictionary(
+                e => e.Key,
+                e => new { status = e.Value.Status.ToString(), description = e.Value.Description });
+            var result = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                status = report.Status.ToString(),
+                timestamp = DateTime.UtcNow,
+                services
+            });
+            await context.Response.WriteAsync(result);
+        }
     }
 });
 

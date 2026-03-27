@@ -13,7 +13,7 @@ param location string
 param environment string
 
 @description('Allowed CORS origins for the blob storage (restrict in production)')
-param corsAllowedOrigins array = ['*']
+param corsAllowedOrigins array = []
 
 // ── Storage account name: alphanumeric, 3–24 chars ───────────────────────────
 var storageAccountName = take(replace(toLower('${namePrefix}st${environment}'), '-', ''), 24)

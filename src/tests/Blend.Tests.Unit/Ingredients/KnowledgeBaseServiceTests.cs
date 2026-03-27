@@ -37,6 +37,8 @@ public class KnowledgeBaseServiceTests
                 It.IsAny<string?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(pairings ?? []);
+        mock.Setup(r => r.GetByQueryAsync(It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, object>>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pairings ?? []);
         mock.Setup(r => r.GetByIdAsync(
                 It.IsAny<string>(),
                 It.IsAny<string>(),
@@ -292,6 +294,8 @@ public class KnowledgeBaseServiceTests
                 It.Is<string>(q => q.Contains("TOP 3")),
                 It.IsAny<string?>(),
                 It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pairings.Take(3).ToList());
+        mock.Setup(r => r.GetByQueryAsync(It.Is<string>(q => q.Contains("TOP 3")), It.IsAny<IReadOnlyDictionary<string, object>>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(pairings.Take(3).ToList());
 
         var svc = CreateService(pairingRepo: mock.Object);

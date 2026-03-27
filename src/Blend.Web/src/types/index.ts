@@ -133,6 +133,15 @@ export interface RecipeAuthor {
 }
 
 /** Full recipe detail returned by GET /api/v1/recipes/{id}. */
+export interface RecipeNutritionInfo {
+  calories?: number
+  protein?: number
+  carbs?: number
+  fat?: number
+  fiber?: number
+  sugar?: number
+}
+
 export interface Recipe {
   id: string
   title: string
@@ -152,6 +161,7 @@ export interface Recipe {
   steps: RecipeStep[]
   dataSource: RecipeDataSource
   author?: RecipeAuthor
+  nutritionInfo?: RecipeNutritionInfo
   likeCount: number
   isLiked?: boolean
   viewCount?: number
@@ -468,10 +478,12 @@ export type UnitSystem = 'Metric' | 'Imperial'
 
 export interface AppSettings {
   unitSystem: UnitSystem
+  theme: ThemeMode
 }
 
 export interface UpdateSettingsRequest {
-  unitSystem: UnitSystem
+  unitSystem?: UnitSystem
+  theme?: ThemeMode
 }
 
 // ── Ingredient Submissions ────────────────────────────────────────────────────

@@ -42,7 +42,9 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: 'blend-auth',
-      partialize: (state) => ({ user: state.user, token: state.token, isAuthenticated: state.isAuthenticated }),
+      // Only persist non-sensitive state. JWT token is NOT persisted to prevent XSS token theft.
+      // The token is held in memory only and refreshed via httpOnly cookie on page reload.
+      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
     }
   )
 )

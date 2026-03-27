@@ -17,6 +17,7 @@ public sealed class HomeService : IHomeService
     private readonly IRepository<Content>? _contentRepository;
     private readonly IRepository<Recipe>? _recipeRepository;
     private readonly IRepository<Activity>? _activityRepository;
+    private readonly IRepository<Connection>? _connectionRepository;
     private readonly IPreferenceService _preferenceService;
     private readonly ICacheService? _cacheService;
     private readonly IConfiguration _configuration;
@@ -52,6 +53,7 @@ public sealed class HomeService : IHomeService
         IRepository<Content>? contentRepository = null,
         IRepository<Recipe>? recipeRepository = null,
         IRepository<Activity>? activityRepository = null,
+        IRepository<Connection>? connectionRepository = null,
         ICacheService? cacheService = null)
     {
         _logger = logger;
@@ -60,6 +62,7 @@ public sealed class HomeService : IHomeService
         _contentRepository = contentRepository;
         _recipeRepository = recipeRepository;
         _activityRepository = activityRepository;
+        _connectionRepository = connectionRepository;
         _cacheService = cacheService;
     }
 
@@ -75,7 +78,7 @@ public sealed class HomeService : IHomeService
 
         // Launch all sections in parallel (ADR 0006 aggregation pattern).
         var featuredTask = GetFeaturedSectionAsync(ct);
-        var communityTask = GetCommunitySectionAsync(ct);
+        var communityTask = GetCommunitySectionAsync(userId, ct);
         var recentlyViewedTask = userId is not null
             ? GetRecentlyViewedSectionAsync(userId, ct)
             : Task.FromResult(new RecentlyViewedSection { Recipes = [] });
@@ -172,11 +175,14 @@ public sealed class HomeService : IHomeService
 
     // ── Community recipes section ──────────────────────────────────────────────
 
-    private async Task<IReadOnlyList<CommunityRecipeCacheItem>> GetCommunitySectionAsync(CancellationToken ct)
+    private async Task<IReadOnlyList<CommunityRecipeCacheItem>> GetCommunitySectionAsync(string? userId, CancellationToken ct)
     {
+        // Try friends-specific cache first, then fall back to global cache.
+        var cacheKey = userId is not null ? $"home:community:{userId}" : CommunityCacheKey;
+
         if (_cacheService is not null)
         {
-            var cached = await _cacheService.GetAsync<IReadOnlyList<CommunityRecipeCacheItem>>(CommunityCacheKey, ct);
+            var cached = await _cacheService.GetAsync<IReadOnlyList<CommunityRecipeCacheItem>>(cacheKey, ct);
             if (cached is not null)
             {
                 return cached;
@@ -188,15 +194,41 @@ public sealed class HomeService : IHomeService
             return [];
         }
 
-        var query =
-            $"SELECT TOP {CommunityRecipeLimit} * FROM c " +
-            "WHERE c.isPublic = true " +
-            "ORDER BY c.createdAt DESC";
+        // When the user has friends, prioritize their recipes.
+        var friendIds = userId is not null ? await GetFriendIdsAsync(userId, ct) : [];
 
         IReadOnlyList<Recipe> recipes;
         try
         {
-            recipes = await _recipeRepository.GetByQueryAsync(query, partitionKey: null, ct);
+            if (friendIds.Count > 0)
+            {
+                // Fetch friends' public recipes first, then backfill with other public recipes.
+                var friendRecipes = await FetchFriendsRecipesAsync(friendIds, ct);
+                if (friendRecipes.Count >= CommunityRecipeLimit)
+                {
+                    recipes = friendRecipes.Take(CommunityRecipeLimit).ToList();
+                }
+                else
+                {
+                    // Backfill with general public recipes (excluding friends to avoid duplicates).
+                    var friendIdSet = new HashSet<string>(friendIds);
+                    var generalQuery =
+                        $"SELECT TOP {CommunityRecipeLimit} * FROM c " +
+                        "WHERE c.isPublic = true " +
+                        "ORDER BY c.createdAt DESC";
+                    var general = await _recipeRepository.GetByQueryAsync(generalQuery, partitionKey: null, ct);
+                    var backfill = general.Where(r => !friendIdSet.Contains(r.AuthorId));
+                    recipes = friendRecipes.Concat(backfill).Take(CommunityRecipeLimit).ToList();
+                }
+            }
+            else
+            {
+                var query =
+                    $"SELECT TOP {CommunityRecipeLimit} * FROM c " +
+                    "WHERE c.isPublic = true " +
+                    "ORDER BY c.createdAt DESC";
+                recipes = await _recipeRepository.GetByQueryAsync(query, partitionKey: null, ct);
+            }
         }
         catch (Exception ex)
         {
@@ -209,10 +241,49 @@ public sealed class HomeService : IHomeService
         if (_cacheService is not null)
         {
             await _cacheService.SetAsync<IReadOnlyList<CommunityRecipeCacheItem>>(
-                CommunityCacheKey, items, CommunityL1Ttl, CommunityL2Ttl, ct);
+                cacheKey, items, CommunityL1Ttl, CommunityL2Ttl, ct);
         }
 
         return items;
+    }
+
+    /// <summary>Returns accepted friend user IDs for the given user.</summary>
+    private async Task<IReadOnlyList<string>> GetFriendIdsAsync(string userId, CancellationToken ct)
+    {
+        if (_connectionRepository is null)
+        {
+            return [];
+        }
+
+        try
+        {
+            var query = "SELECT c.friendUserId FROM c WHERE c.status = 'Accepted'";
+            var connections = await _connectionRepository.GetByQueryAsync(query, partitionKey: userId, ct);
+            return connections.Select(c => c.FriendUserId).ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to fetch friend IDs for user {UserId}; falling back to general community.", userId);
+            return [];
+        }
+    }
+
+    /// <summary>Fetches recent public recipes from the given friend author IDs.</summary>
+    private async Task<IReadOnlyList<Recipe>> FetchFriendsRecipesAsync(IReadOnlyList<string> friendIds, CancellationToken ct)
+    {
+        // Cap fan-out to avoid unbounded parallel Cosmos queries.
+        var tasks = friendIds.Take(20).Select(async friendId =>
+        {
+            var query = $"SELECT TOP {CommunityRecipeLimit} * FROM c WHERE c.isPublic = true ORDER BY c.createdAt DESC";
+            return await _recipeRepository!.GetByQueryAsync(query, partitionKey: friendId, ct);
+        });
+
+        var results = await Task.WhenAll(tasks);
+        return results
+            .SelectMany(r => r)
+            .OrderByDescending(r => r.CreatedAt)
+            .Take(CommunityRecipeLimit)
+            .ToList();
     }
 
     // ── Recently viewed section ────────────────────────────────────────────────
@@ -225,17 +296,18 @@ public sealed class HomeService : IHomeService
             return new RecentlyViewedSection { Recipes = [] };
         }
 
-        var safeUserId = userId.Replace("'", string.Empty);
         var query =
             $"SELECT TOP {RecentlyViewedLimit} * FROM c " +
-            $"WHERE c.userId = '{safeUserId}' " +
+            "WHERE c.userId = @userId " +
             "AND c.type = 'Viewed' " +
             "ORDER BY c.timestamp DESC";
+
+        var parameters = new Dictionary<string, object> { ["@userId"] = userId };
 
         IReadOnlyList<Activity> activities;
         try
         {
-            activities = await _activityRepository.GetByQueryAsync(query, partitionKey: userId, ct);
+            activities = await _activityRepository.GetByQueryAsync(query, parameters, partitionKey: userId, ct);
         }
         catch (Exception ex)
         {

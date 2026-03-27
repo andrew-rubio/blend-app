@@ -73,8 +73,9 @@ public sealed class CosmosUserStore :
 
     public async Task<BlendUser?> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
     {
-        var query = $"SELECT * FROM c WHERE c.normalizedUserName = '{Escape(normalizedUserName)}'";
-        var results = await _users.GetByQueryAsync(query, cancellationToken: cancellationToken);
+        var query = "SELECT * FROM c WHERE c.normalizedUserName = @normalizedUserName";
+        var parameters = new Dictionary<string, object> { ["@normalizedUserName"] = normalizedUserName };
+        var results = await _users.GetByQueryAsync(query, parameters, cancellationToken: cancellationToken);
         return results.FirstOrDefault();
     }
 
@@ -116,8 +117,9 @@ public sealed class CosmosUserStore :
 
     public async Task<BlendUser?> FindByEmailAsync(string normalizedEmail, CancellationToken cancellationToken)
     {
-        var query = $"SELECT * FROM c WHERE c.normalizedEmail = '{Escape(normalizedEmail)}'";
-        var results = await _users.GetByQueryAsync(query, cancellationToken: cancellationToken);
+        var query = "SELECT * FROM c WHERE c.normalizedEmail = @normalizedEmail";
+        var parameters = new Dictionary<string, object> { ["@normalizedEmail"] = normalizedEmail };
+        var results = await _users.GetByQueryAsync(query, parameters, cancellationToken: cancellationToken);
         return results.FirstOrDefault();
     }
 
@@ -168,12 +170,18 @@ public sealed class CosmosUserStore :
     {
         // Cosmos SQL: find the first user whose externalLogins array contains a matching entry.
         var query =
-            $"SELECT * FROM c WHERE EXISTS(" +
-            $"SELECT VALUE l FROM l IN c.externalLogins " +
-            $"WHERE l.loginProvider = '{Escape(loginProvider)}' " +
-            $"AND l.providerKey = '{Escape(providerKey)}')";
+            "SELECT * FROM c WHERE EXISTS(" +
+            "SELECT VALUE l FROM l IN c.externalLogins " +
+            "WHERE l.loginProvider = @loginProvider " +
+            "AND l.providerKey = @providerKey)";
 
-        var results = await _users.GetByQueryAsync(query, cancellationToken: cancellationToken);
+        var parameters = new Dictionary<string, object>
+        {
+            ["@loginProvider"] = loginProvider,
+            ["@providerKey"] = providerKey,
+        };
+
+        var results = await _users.GetByQueryAsync(query, parameters, cancellationToken: cancellationToken);
         return results.FirstOrDefault();
     }
 
@@ -214,18 +222,13 @@ public sealed class CosmosUserStore :
         // Normalise to the enum value's name so the query matches what JsonStringEnumConverter stores.
         var storedRoleName = Enum.TryParse<UserRole>(roleName, ignoreCase: true, out var role)
             ? role.ToString()
-            : Escape(roleName);
+            : roleName;
 
-        var query = $"SELECT * FROM c WHERE c.role = '{storedRoleName}'";
-        var results = await _users.GetByQueryAsync(query, cancellationToken: cancellationToken);
+        var query = "SELECT * FROM c WHERE c.role = @roleName";
+        var parameters = new Dictionary<string, object> { ["@roleName"] = storedRoleName };
+        var results = await _users.GetByQueryAsync(query, parameters, cancellationToken: cancellationToken);
         return results.ToList();
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Escapes a string value for safe embedding inside a Cosmos DB SQL single-quoted literal.
-    /// Single quotes are escaped with a backslash per the Cosmos DB SQL grammar.
-    /// </summary>
-    private static string Escape(string value) => value.Replace("\\", "\\\\").Replace("'", "\\'");
 }

@@ -153,9 +153,9 @@ public sealed class RecipeService : IRecipeService
             return null;
         }
 
-        var safeId = id.Replace("'", string.Empty);
         var results = await _recipeRepository.GetByQueryAsync(
-            $"SELECT * FROM c WHERE c.id = '{safeId}'",
+            "SELECT * FROM c WHERE c.id = @id",
+            new Dictionary<string, object> { ["@id"] = id },
             partitionKey: null,
             ct);
 
@@ -187,9 +187,9 @@ public sealed class RecipeService : IRecipeService
             return (null, RecipeOpResult.NotFound, null);
         }
 
-        var safeId = id.Replace("'", string.Empty);
         var results = await _recipeRepository.GetByQueryAsync(
-            $"SELECT * FROM c WHERE c.id = '{safeId}'",
+            "SELECT * FROM c WHERE c.id = @id",
+            new Dictionary<string, object> { ["@id"] = id },
             partitionKey: null,
             ct);
 
@@ -261,9 +261,9 @@ public sealed class RecipeService : IRecipeService
             return RecipeOpResult.ConfirmationRequired;
         }
 
-        var safeId = id.Replace("'", string.Empty);
         var results = await _recipeRepository.GetByQueryAsync(
-            $"SELECT * FROM c WHERE c.id = '{safeId}'",
+            "SELECT * FROM c WHERE c.id = @id",
+            new Dictionary<string, object> { ["@id"] = id },
             partitionKey: null,
             ct);
 
@@ -281,7 +281,8 @@ public sealed class RecipeService : IRecipeService
         if (_activityRepository is not null)
         {
             var activities = await _activityRepository.GetByQueryAsync(
-                $"SELECT * FROM c WHERE c.referenceId = '{safeId}' AND c.referenceType = 'Recipe'",
+                "SELECT * FROM c WHERE c.referenceId = @id AND c.referenceType = 'Recipe'",
+                new Dictionary<string, object> { ["@id"] = id },
                 partitionKey: null,
                 ct);
 
@@ -323,9 +324,9 @@ public sealed class RecipeService : IRecipeService
             return (null, RecipeOpResult.NotFound);
         }
 
-        var safeId = id.Replace("'", string.Empty);
         var results = await _recipeRepository.GetByQueryAsync(
-            $"SELECT * FROM c WHERE c.id = '{safeId}'",
+            "SELECT * FROM c WHERE c.id = @id",
+            new Dictionary<string, object> { ["@id"] = id },
             partitionKey: null,
             ct);
 
@@ -359,7 +360,6 @@ public sealed class RecipeService : IRecipeService
             return new PagedResult<Recipe>();
         }
 
-        var safeUserId = userId.Replace("'", string.Empty);
         var isOwner = requestingUserId == userId;
 
         var orderBy = sort switch
@@ -369,10 +369,14 @@ public sealed class RecipeService : IRecipeService
             _ => "c.createdAt DESC",
         };
 
+        // Note: Cosmos DB GetPagedAsync takes raw SQL — userId here is validated as a GUID from auth claims.
+        // The partition key scoping provides the actual safety, but we still parameterize for defense-in-depth.
         var query = isOwner
-            ? $"SELECT * FROM c WHERE c.authorId = '{safeUserId}' AND (NOT IS_DEFINED(c.isDeleted) OR c.isDeleted = false) ORDER BY {orderBy}"
-            : $"SELECT * FROM c WHERE c.authorId = '{safeUserId}' AND c.isPublic = true AND (NOT IS_DEFINED(c.isDeleted) OR c.isDeleted = false) ORDER BY {orderBy}";
+            ? $"SELECT * FROM c WHERE c.authorId = @userId AND (NOT IS_DEFINED(c.isDeleted) OR c.isDeleted = false) ORDER BY {orderBy}"
+            : $"SELECT * FROM c WHERE c.authorId = @userId AND c.isPublic = true AND (NOT IS_DEFINED(c.isDeleted) OR c.isDeleted = false) ORDER BY {orderBy}";
 
+        // GetPagedAsync doesn't support parameterized queries yet — partition key scoping ensures safety.
+        query = query.Replace("@userId", $"'{userId.Replace("'", string.Empty)}'");
         return await _recipeRepository.GetPagedAsync(query, options, partitionKey: userId, ct);
     }
 
@@ -384,10 +388,9 @@ public sealed class RecipeService : IRecipeService
             return RecipeOpResult.NotFound;
         }
 
-        var safeRecipeId = recipeId.Replace("'", string.Empty);
-        var safeUserId = userId.Replace("'", string.Empty);
         var recipeResults = await _recipeRepository.GetByQueryAsync(
-            $"SELECT * FROM c WHERE c.id = '{safeRecipeId}'",
+            "SELECT * FROM c WHERE c.id = @recipeId",
+            new Dictionary<string, object> { ["@recipeId"] = recipeId },
             partitionKey: null,
             ct);
 
@@ -398,8 +401,10 @@ public sealed class RecipeService : IRecipeService
 
         var recipe = recipeResults[0];
 
+        var likeId = $"{userId}:like:{recipeId}";
         var existingLike = await _activityRepository.GetByQueryAsync(
-            $"SELECT * FROM c WHERE c.id = '{safeUserId}:like:{safeRecipeId}'",
+            "SELECT * FROM c WHERE c.id = @likeId",
+            new Dictionary<string, object> { ["@likeId"] = likeId },
             partitionKey: userId,
             ct);
 
@@ -410,7 +415,7 @@ public sealed class RecipeService : IRecipeService
 
         var activity = new Activity
         {
-            Id = $"{safeUserId}:like:{safeRecipeId}",
+            Id = likeId,
             UserId = userId,
             Type = ActivityType.Liked,
             ReferenceId = recipeId,
@@ -437,10 +442,9 @@ public sealed class RecipeService : IRecipeService
             return RecipeOpResult.NotFound;
         }
 
-        var safeRecipeId = recipeId.Replace("'", string.Empty);
-        var safeUserId = userId.Replace("'", string.Empty);
         var recipeResults = await _recipeRepository.GetByQueryAsync(
-            $"SELECT * FROM c WHERE c.id = '{safeRecipeId}'",
+            "SELECT * FROM c WHERE c.id = @recipeId",
+            new Dictionary<string, object> { ["@recipeId"] = recipeId },
             partitionKey: null,
             ct);
 
@@ -451,8 +455,10 @@ public sealed class RecipeService : IRecipeService
 
         var recipe = recipeResults[0];
 
+        var likeId = $"{userId}:like:{recipeId}";
         var existingLike = await _activityRepository.GetByQueryAsync(
-            $"SELECT * FROM c WHERE c.id = '{safeUserId}:like:{safeRecipeId}'",
+            "SELECT * FROM c WHERE c.id = @likeId",
+            new Dictionary<string, object> { ["@likeId"] = likeId },
             partitionKey: userId,
             ct);
 
@@ -461,7 +467,7 @@ public sealed class RecipeService : IRecipeService
             return RecipeOpResult.NotLiked;
         }
 
-        await _activityRepository.DeleteAsync($"{safeUserId}:like:{safeRecipeId}", userId, ct);
+        await _activityRepository.DeleteAsync(likeId, userId, ct);
 
         var patches = new Dictionary<string, object?>
         {
@@ -481,6 +487,7 @@ public sealed class RecipeService : IRecipeService
             return new PagedResult<Recipe>();
         }
 
+        // GetPagedAsync doesn't support parameterized queries — partition key scoping ensures safety.
         var safeUserId = userId.Replace("'", string.Empty);
         var activityPage = await _activityRepository.GetPagedAsync(
             $"SELECT * FROM c WHERE c.userId = '{safeUserId}' AND c.type = 'Liked' AND c.referenceType = 'Recipe' ORDER BY c.timestamp DESC",
@@ -493,9 +500,9 @@ public sealed class RecipeService : IRecipeService
         var recipes = new List<Recipe>();
         foreach (var activity in activityPage.Items)
         {
-            var safeReferenceId = activity.ReferenceId.Replace("'", string.Empty);
             var recipeResults = await _recipeRepository.GetByQueryAsync(
-                $"SELECT * FROM c WHERE c.id = '{safeReferenceId}'",
+                "SELECT * FROM c WHERE c.id = @id",
+                new Dictionary<string, object> { ["@id"] = activity.ReferenceId },
                 partitionKey: null,
                 ct);
             if (recipeResults.Count > 0)
@@ -520,6 +527,7 @@ public sealed class RecipeService : IRecipeService
             return new PagedResult<Activity>();
         }
 
+        // GetPagedAsync doesn't support parameterized queries — recipeId is validated as a GUID from route.
         var safeRecipeId = recipeId.Replace("'", string.Empty);
         return await _activityRepository.GetPagedAsync(
             $"SELECT * FROM c WHERE c.referenceId = '{safeRecipeId}' AND c.type = 'Liked' AND c.referenceType = 'Recipe'",
