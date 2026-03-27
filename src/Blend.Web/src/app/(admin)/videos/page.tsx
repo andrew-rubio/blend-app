@@ -49,7 +49,16 @@ function VideoForm({ initial, onSave, onCancel, isPending }: VideoFormProps) {
     })
   }
 
-  const isYouTube = embedUrl.includes('youtube.com') || embedUrl.includes('youtu.be')
+  function isYouTubeUrl(url: string): boolean {
+    try {
+      const { hostname } = new URL(url)
+      return hostname === 'www.youtube.com' || hostname === 'youtube.com' || hostname === 'youtu.be'
+    } catch {
+      return false
+    }
+  }
+
+  const isYouTube = isYouTubeUrl(embedUrl)
 
   return (
     <form

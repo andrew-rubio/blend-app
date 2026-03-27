@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import type { Metadata } from 'next'
 import { useAdminDashboardCounts } from '@/hooks/useAdmin'
 import { Card } from '@/components/ui/Card'
 
