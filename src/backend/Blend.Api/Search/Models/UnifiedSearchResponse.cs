@@ -65,6 +65,13 @@ public sealed class SearchResponseMetadata
     /// <summary>Whether the Spoonacular API quota was exhausted and only community results are returned.</summary>
     public bool QuotaExhausted { get; init; }
 
+    /// <summary>
+    /// True when the search is operating in degraded mode because Spoonacular is unavailable
+    /// (quota exhausted, service down, or not configured). Only community results are returned.
+    /// Per PLAT-12 through PLAT-14.
+    /// </summary>
+    public bool DegradedMode { get; init; }
+
     /// <summary>Opaque cursor to retrieve the next page, or <c>null</c> if this is the last page.</summary>
     public string? NextCursor { get; init; }
 }

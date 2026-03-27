@@ -163,6 +163,7 @@ var app = builder.Build();
 // ── Middleware Pipeline ────────────────────────────────────────────────────────
 app.UseCorrelationId();
 app.UseGlobalExceptionHandler();
+app.UseRequestLogging();
 
 if (app.Environment.IsDevelopment())
 {
