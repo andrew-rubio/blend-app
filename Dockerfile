@@ -1,10 +1,12 @@
 # ── Stage 1: Build ────────────────────────────────────────────────────────────
-FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
 WORKDIR /src
 
 # Copy project files first for layer caching
 COPY src/backend/Directory.Build.props ./src/backend/
 COPY src/backend/Blend.Api/Blend.Api.csproj ./src/backend/Blend.Api/
+COPY src/backend/Blend.Domain/Blend.Domain.csproj ./src/backend/Blend.Domain/
+COPY src/backend/Blend.Infrastructure/Blend.Infrastructure.csproj ./src/backend/Blend.Infrastructure/
 COPY src/backend/Blend.ServiceDefaults/Blend.ServiceDefaults.csproj ./src/backend/Blend.ServiceDefaults/
 
 # Restore only the API and its dependencies (not AppHost/tests)
@@ -12,6 +14,8 @@ RUN dotnet restore src/backend/Blend.Api/Blend.Api.csproj
 
 # Copy remaining source files
 COPY src/backend/Blend.Api/ ./src/backend/Blend.Api/
+COPY src/backend/Blend.Domain/ ./src/backend/Blend.Domain/
+COPY src/backend/Blend.Infrastructure/ ./src/backend/Blend.Infrastructure/
 COPY src/backend/Blend.ServiceDefaults/ ./src/backend/Blend.ServiceDefaults/
 
 # Build and publish in Release configuration
@@ -22,7 +26,7 @@ RUN dotnet publish src/backend/Blend.Api/Blend.Api.csproj \
     /p:UseAppHost=false
 
 # ── Stage 2: Runtime ──────────────────────────────────────────────────────────
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS runtime
 WORKDIR /app
 
 # Create a non-root user for security
