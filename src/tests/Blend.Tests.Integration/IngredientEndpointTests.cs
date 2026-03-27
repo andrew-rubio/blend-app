@@ -107,6 +107,21 @@ public sealed class InMemoryKnowledgeBaseService : IKnowledgeBaseService
         // No-op in tests — pairing updates are tested via unit tests
         return Task.CompletedTask;
     }
+
+    public Task<bool> IndexIngredientAsync(
+        string ingredientId,
+        string name,
+        string? category = null,
+        CancellationToken ct = default)
+    {
+        _ingredients[ingredientId] = new IngredientDocument
+        {
+            IngredientId = ingredientId,
+            Name = name,
+            Category = category,
+        };
+        return Task.FromResult(true);
+    }
 }
 
 // ── In-memory pairing repository ──────────────────────────────────────────────

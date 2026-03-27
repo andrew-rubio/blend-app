@@ -332,6 +332,44 @@ public sealed class KnowledgeBaseService : IKnowledgeBaseService
         }
     }
 
+    /// <inheritdoc/>
+    public async Task<bool> IndexIngredientAsync(
+        string ingredientId,
+        string name,
+        string? category = null,
+        CancellationToken ct = default)
+    {
+        if (_searchClient is null || !IsCircuitClosed())
+        {
+            _logger.LogWarning("Azure AI Search is not available; skipping index for ingredient '{IngredientId}'.", ingredientId);
+            return false;
+        }
+
+        try
+        {
+            var document = new IngredientDocument
+            {
+                IngredientId = ingredientId,
+                Name = name,
+                Category = category,
+                Aliases = [],
+                Substitutes = [],
+            };
+
+            var batch = IndexDocumentsBatch.Upload([document]);
+            await _searchClient.IndexDocumentsAsync(batch, cancellationToken: ct);
+            RecordSuccess();
+            _logger.LogInformation("Indexed ingredient '{IngredientId}' in Azure AI Search.", ingredientId);
+            return true;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            RecordFailure();
+            _logger.LogWarning(ex, "Failed to index ingredient '{IngredientId}' in Azure AI Search.", ingredientId);
+            return false;
+        }
+    }
+
     // ── Circuit-breaker helpers ───────────────────────────────────────────────
 
     /// <summary>
