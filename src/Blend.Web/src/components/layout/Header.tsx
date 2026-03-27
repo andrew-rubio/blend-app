@@ -47,6 +47,14 @@ export function Header() {
           >
             Friends
           </Link>
+          {user?.role === 'admin' && (
+            <Link
+              href="/admin/dashboard"
+              className="text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+            >
+              Admin
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-3">

@@ -5,7 +5,7 @@ import type { NextRequest } from 'next/server'
  * Routes that require an authenticated user.
  * Guest users are redirected to /login with a `from` parameter.
  */
-const PROTECTED_ROUTES = ['/preferences', '/profile', '/settings', '/cook-mode']
+const PROTECTED_ROUTES = ['/preferences', '/profile', '/settings', '/cook-mode', '/admin']
 
 /**
  * Routes only accessible to unauthenticated users (e.g. login, register).
