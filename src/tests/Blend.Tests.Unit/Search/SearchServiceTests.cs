@@ -609,4 +609,86 @@ public class SearchServiceTests
         // Should not call GetUserPreferencesAsync for anonymous requests.
         mockPref.Verify(p => p.GetUserPreferencesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    // ── DegradedMode tests ─────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task SearchRecipesAsync_WhenNoSpoonacularConfigured_DegradedModeTrue()
+    {
+        var mockPref = new Mock<IPreferenceService>();
+        mockPref.Setup(p => p.GetUserPreferencesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new UserPreferences());
+        mockPref.Setup(p => p.ApplyPreferencesToSearch(It.IsAny<ComplexSearchFilters>(), It.IsAny<UserPreferences>()))
+                .Returns(new ComplexSearchFilters());
+
+        // No Spoonacular service registered
+        var svc = CreateService(preferences: mockPref.Object);
+        var response = await svc.SearchRecipesAsync(new SearchRecipesRequest { Q = "chicken" }, null);
+
+        Assert.True(response.Metadata.DegradedMode);
+    }
+
+    [Fact]
+    public async Task SearchRecipesAsync_WhenSpoonacularDown_DegradedModeTrue()
+    {
+        var mockSpoon = new Mock<ISpoonacularService>();
+        mockSpoon.Setup(s => s.ComplexSearchAsync(It.IsAny<string>(), It.IsAny<ComplexSearchFilters>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(SpoonacularResult<IReadOnlyList<RecipeSummary>>.Degraded());
+
+        var mockPref = new Mock<IPreferenceService>();
+        mockPref.Setup(p => p.GetUserPreferencesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new UserPreferences());
+        mockPref.Setup(p => p.ApplyPreferencesToSearch(It.IsAny<ComplexSearchFilters>(), It.IsAny<UserPreferences>()))
+                .Returns(new ComplexSearchFilters());
+
+        var svc = CreateService(spoonacular: mockSpoon.Object, preferences: mockPref.Object);
+        var response = await svc.SearchRecipesAsync(new SearchRecipesRequest { Q = "pasta" }, null);
+
+        Assert.True(response.Metadata.DegradedMode);
+    }
+
+    [Fact]
+    public async Task SearchRecipesAsync_WhenSpoonacularRateLimited_DegradedModeTrue()
+    {
+        var mockSpoon = new Mock<ISpoonacularService>();
+        mockSpoon.Setup(s => s.ComplexSearchAsync(It.IsAny<string>(), It.IsAny<ComplexSearchFilters>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(SpoonacularResult<IReadOnlyList<RecipeSummary>>.RateLimited());
+
+        var mockPref = new Mock<IPreferenceService>();
+        mockPref.Setup(p => p.GetUserPreferencesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new UserPreferences());
+        mockPref.Setup(p => p.ApplyPreferencesToSearch(It.IsAny<ComplexSearchFilters>(), It.IsAny<UserPreferences>()))
+                .Returns(new ComplexSearchFilters());
+
+        var svc = CreateService(spoonacular: mockSpoon.Object, preferences: mockPref.Object);
+        var response = await svc.SearchRecipesAsync(new SearchRecipesRequest { Q = "pizza" }, null);
+
+        Assert.True(response.Metadata.DegradedMode);
+        Assert.True(response.Metadata.QuotaExhausted);
+    }
+
+    [Fact]
+    public async Task SearchRecipesAsync_WhenSpoonacularAvailable_DegradedModeFalse()
+    {
+        var spoonResults = (IReadOnlyList<RecipeSummary>)
+        [
+            new RecipeSummary { SpoonacularId = 1, Title = "Pasta", Likes = 10 },
+        ];
+
+        var mockSpoon = new Mock<ISpoonacularService>();
+        mockSpoon.Setup(s => s.ComplexSearchAsync(It.IsAny<string>(), It.IsAny<ComplexSearchFilters>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(SpoonacularResult<IReadOnlyList<RecipeSummary>>.FromApi(spoonResults));
+
+        var mockPref = new Mock<IPreferenceService>();
+        mockPref.Setup(p => p.GetUserPreferencesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new UserPreferences());
+        mockPref.Setup(p => p.ApplyPreferencesToSearch(It.IsAny<ComplexSearchFilters>(), It.IsAny<UserPreferences>()))
+                .Returns(new ComplexSearchFilters());
+
+        var svc = CreateService(spoonacular: mockSpoon.Object, preferences: mockPref.Object);
+        var response = await svc.SearchRecipesAsync(new SearchRecipesRequest { Q = "pasta" }, null);
+
+        Assert.False(response.Metadata.DegradedMode);
+        Assert.False(response.Metadata.QuotaExhausted);
+    }
 }

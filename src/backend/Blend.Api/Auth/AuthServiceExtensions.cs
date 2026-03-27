@@ -136,7 +136,15 @@ public static class AuthServiceExtensions
                 policy.RequireAuthenticatedUser().RequireRole("Admin"));
         });
 
-        // Rate limiting - fixed window, 10 requests/minute per IP for auth endpoints
+        // Rate limiting
+        // - Auth endpoints: 10 requests/minute per IP (strict)
+        // - Anonymous users: 30 requests/minute per IP (when global limiter enabled)
+        // - Authenticated users: 100 requests/minute per user ID (when global limiter enabled)
+        // - Admin users: no rate limit
+        // Global limiter is disabled when RateLimiting:GlobalEnabled = false (e.g. in tests).
+        var globalRateLimitingEnabled =
+            configuration.GetValue("RateLimiting:GlobalEnabled", true);
+
         services.AddRateLimiter(options =>
         {
             options.AddFixedWindowLimiter("auth", limiterOptions =>
@@ -146,6 +154,62 @@ public static class AuthServiceExtensions
                 limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                 limiterOptions.QueueLimit = 0;
             });
+
+            if (globalRateLimitingEnabled)
+            {
+                options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+                {
+                    // Admins are not rate-limited
+                    if (httpContext.User.IsInRole("Admin"))
+                    {
+                        return RateLimitPartition.GetNoLimiter("admin");
+                    }
+
+                    // Authenticated users: 100 req/min per user ID
+                    var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                    if (!string.IsNullOrEmpty(userId))
+                    {
+                        return RateLimitPartition.GetFixedWindowLimiter(
+                            partitionKey: $"user:{userId}",
+                            factory: _ => new FixedWindowRateLimiterOptions
+                            {
+                                PermitLimit = 100,
+                                Window = TimeSpan.FromMinutes(1),
+                                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                                QueueLimit = 0
+                            });
+                    }
+
+                    // Anonymous users: 30 req/min per IP
+                    var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: $"anon:{ip}",
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 30,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                            QueueLimit = 0
+                        });
+                });
+            }
+
+            options.OnRejected = async (context, cancellationToken) =>
+            {
+                context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+                {
+                    context.HttpContext.Response.Headers["Retry-After"] =
+                        ((int)retryAfter.TotalSeconds).ToString();
+                }
+                else
+                {
+                    context.HttpContext.Response.Headers["Retry-After"] = "60";
+                }
+                await context.HttpContext.Response.WriteAsync(
+                    "Too many requests. Please try again later.",
+                    cancellationToken);
+            };
         });
 
         // Register auth services

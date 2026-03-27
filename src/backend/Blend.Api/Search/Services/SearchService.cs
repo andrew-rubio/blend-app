@@ -63,8 +63,11 @@ public sealed class SearchService : ISearchService
 
         await Task.WhenAll(spoonacularTask, internalTask);
 
-        var (spoonacularResults, quotaExhausted) = await spoonacularTask;
+        var (spoonacularResults, quotaExhausted, spoonacularUnavailable) = await spoonacularTask;
         var internalResults = await internalTask;
+
+        // Degraded mode = Spoonacular is unavailable for any reason (quota, service down, not configured)
+        var degradedMode = spoonacularUnavailable || _spoonacularService is null;
 
         // ── Map to unified results ─────────────────────────────────────────────
         var unified = new List<UnifiedRecipeResult>(spoonacularResults.Count + internalResults.Count);
@@ -82,6 +85,12 @@ public sealed class SearchService : ISearchService
         var nextOffset = cursorOffset + paged.Count;
         var nextCursor = nextOffset < totalResults ? EncodeCursor(nextOffset) : null;
 
+        if (degradedMode)
+        {
+            _logger.LogWarning(
+                "Search is running in degraded mode (Spoonacular unavailable). Returning internal results only.");
+        }
+
         return new UnifiedSearchResponse
         {
             Results = paged,
@@ -89,6 +98,7 @@ public sealed class SearchService : ISearchService
             {
                 TotalResults = totalResults,
                 QuotaExhausted = quotaExhausted,
+                DegradedMode = degradedMode,
                 NextCursor = nextCursor,
             },
         };
@@ -156,17 +166,21 @@ public sealed class SearchService : ISearchService
 
     /// <summary>
     /// Fetches results from Spoonacular, applying user preferences.
-    /// Returns an empty list (with <paramref name="quotaExhausted"/> = true) when the API
-    /// quota is exhausted and no cache is available.
+    /// Returns:
+    /// <list type="bullet">
+    ///   <item><description><c>Results</c> — recipe results (empty when unavailable).</description></item>
+    ///   <item><description><c>QuotaExhausted</c> — true when the API quota is rate-limited.</description></item>
+    ///   <item><description><c>Unavailable</c> — true when Spoonacular is completely unavailable (service down or quota exhausted with no cache).</description></item>
+    /// </list>
     /// </summary>
-    private async Task<(IReadOnlyList<UnifiedRecipeResult> Results, bool QuotaExhausted)> FetchSpoonacularResultsAsync(
+    private async Task<(IReadOnlyList<UnifiedRecipeResult> Results, bool QuotaExhausted, bool Unavailable)> FetchSpoonacularResultsAsync(
         SearchRecipesRequest request,
         UserPreferences preferences,
         CancellationToken ct)
     {
         if (_spoonacularService is null)
         {
-            return ([], false);
+            return ([], false, true);
         }
 
         var baseFilters = new ComplexSearchFilters
@@ -187,14 +201,14 @@ public sealed class SearchService : ISearchService
 
         if (!spoonResult.IsAvailable)
         {
-            return ([], spoonResult.IsLimited);
+            return ([], spoonResult.IsLimited, true);
         }
 
         var results = (spoonResult.Data ?? [])
             .Select(s => MapSpoonacularSummary(s))
             .ToList();
 
-        return (results, spoonResult.IsLimited);
+        return (results, spoonResult.IsLimited, false);
     }
 
     /// <summary>
