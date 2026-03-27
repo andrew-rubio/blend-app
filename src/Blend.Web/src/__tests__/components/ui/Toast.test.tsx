@@ -78,20 +78,13 @@ describe('ToastProvider and useToast', () => {
   })
 
   it('auto-dismisses toast after duration', () => {
-    render(
-      <ToastProvider>
-        <ToastTrigger message="Auto-dismiss" />
-      </ToastProvider>
-    )
-    render(<ToastProvider><ToastTrigger /></ToastProvider>)
-
     const { unmount } = render(
       <ToastProvider>
         <ToastTrigger message="Auto-dismiss" />
       </ToastProvider>
     )
 
-    fireEvent.click(screen.getAllByText('Show toast')[0])
+    fireEvent.click(screen.getByText('Show toast'))
 
     act(() => {
       vi.advanceTimersByTime(6000)

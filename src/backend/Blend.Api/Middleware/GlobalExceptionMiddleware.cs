@@ -32,7 +32,7 @@ public sealed class GlobalExceptionMiddleware
         }
         catch (Exception ex)
         {
-            var correlationId = context.Items.TryGetValue("CorrelationId", out var cid)
+            var correlationId = context.Items.TryGetValue(CorrelationIdMiddleware.ItemKey, out var cid)
                 ? cid as string
                 : context.TraceIdentifier;
 
