@@ -538,3 +538,128 @@ export interface DeleteAccountResponse {
 export interface CancelDeletionResponse {
   message: string
 }
+
+// ── Admin Content Management ──────────────────────────────────────────────────
+
+export interface AdminFeaturedRecipe {
+  id: string
+  recipeId: string
+  title: string
+  description?: string
+  coverImageUrl?: string
+  displayOrder: number
+  source: 'Spoonacular' | 'Community'
+  createdAt: string
+}
+
+export interface CreateFeaturedRecipeRequest {
+  recipeId: string
+  title: string
+  description?: string
+  coverImageUrl?: string
+  displayOrder: number
+}
+
+export interface UpdateFeaturedRecipeRequest {
+  title?: string
+  description?: string
+  coverImageUrl?: string
+  displayOrder?: number
+}
+
+export interface AdminStory {
+  id: string
+  title: string
+  author: string
+  content: string
+  coverImageUrl?: string
+  readingTimeMinutes: number
+  relatedRecipeIds: string[]
+  publishedAt?: string
+  createdAt: string
+}
+
+export interface CreateStoryRequest {
+  title: string
+  author: string
+  content: string
+  coverImageUrl?: string
+  readingTimeMinutes: number
+  relatedRecipeIds: string[]
+}
+
+export interface UpdateStoryRequest {
+  title?: string
+  author?: string
+  content?: string
+  coverImageUrl?: string
+  readingTimeMinutes?: number
+  relatedRecipeIds?: string[]
+}
+
+export interface AdminVideo {
+  id: string
+  title: string
+  creator: string
+  embedUrl: string
+  thumbnailUrl?: string
+  durationSeconds?: number
+  createdAt: string
+}
+
+export interface CreateVideoRequest {
+  title: string
+  creator: string
+  embedUrl: string
+  thumbnailUrl?: string
+  durationSeconds?: number
+}
+
+export interface UpdateVideoRequest {
+  title?: string
+  creator?: string
+  embedUrl?: string
+  thumbnailUrl?: string
+  durationSeconds?: number
+}
+
+export interface AdminIngredientSubmission {
+  id: string
+  name: string
+  category: IngredientCategory
+  description?: string
+  status: IngredientSubmissionStatus
+  submittedById: string
+  submittedByName: string
+  submittedAt: string
+  reviewedAt?: string
+  reviewNotes?: string
+}
+
+export interface AdminIngredientSubmissionsResponse {
+  submissions: AdminIngredientSubmission[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+export interface ApproveSubmissionRequest {
+  notes?: string
+}
+
+export interface RejectSubmissionRequest {
+  reason?: string
+}
+
+export interface BatchActionRequest {
+  ids: string[]
+  notes?: string
+}
+
+export interface AdminDashboardCounts {
+  featuredRecipes: number
+  stories: number
+  videos: number
+  pendingSubmissions: number
+}
