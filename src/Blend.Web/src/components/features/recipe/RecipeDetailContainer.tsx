@@ -81,6 +81,7 @@ export function RecipeDetailContainer({ id }: RecipeDetailContainerProps) {
 
 function RecipeDetail({ recipe }: { recipe: Recipe }) {
   const [activeTab, setActiveTab] = useState<Tab>('overview')
+  const [copied, setCopied] = useState(false)
   const { isAuthenticated } = useAuthStore()
   const { mutate: toggleLike, isPending: isLikePending } = useLikeRecipe()
   const { isOpen: isGuestOpen, message: guestMessage, prompt: promptGuest, close: closeGuest } =
@@ -96,12 +97,17 @@ function RecipeDetail({ recipe }: { recipe: Recipe }) {
   }
 
   const handleShare = async () => {
-    const url = typeof window !== 'undefined' ? window.location.href : ''
+    if (typeof window === 'undefined') return
+    const base = `${window.location.origin}${window.location.pathname}`
+    const mobileUrl = `${base}?utm_source=share&utm_medium=mobile`
+    const webUrl = `${base}?utm_source=share&utm_medium=web`
     try {
       if (navigator.share) {
-        await navigator.share({ title: recipe.title, url })
+        await navigator.share({ title: recipe.title, url: mobileUrl })
       } else {
-        await navigator.clipboard.writeText(url)
+        await navigator.clipboard.writeText(webUrl)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
       }
     } catch {
       // User cancelled share or clipboard unavailable — ignore
@@ -206,7 +212,7 @@ function RecipeDetail({ recipe }: { recipe: Recipe }) {
             onClick={handleShare}
             aria-label="Share recipe"
           >
-            Share
+            {copied ? 'Link copied!' : 'Share'}
           </Button>
 
           {isAuthenticated ? (
