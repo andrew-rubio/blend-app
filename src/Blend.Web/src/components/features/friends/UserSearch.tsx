@@ -59,7 +59,7 @@ export function UserSearch({ onRequestSent }: UserSearchProps) {
 
       {data && data.items.length === 0 && debouncedQuery && !isLoading && (
         <p className="mt-3 text-sm text-gray-500" aria-live="polite">
-          No users found for "{debouncedQuery}".
+          No users found for &ldquo;{debouncedQuery}&rdquo;.
         </p>
       )}
 

@@ -14,7 +14,7 @@ vi.mock('@/hooks/useFriends', () => ({
 }))
 
 vi.mock('@/components/features/friends/UserSearch', () => ({
-  UserSearch: ({ onRequestSent }: { onRequestSent?: () => void }) => (
+  UserSearch: ({ onRequestSent: _onRequestSent }: { onRequestSent?: () => void }) => (
     <div data-testid="user-search">UserSearch</div>
   ),
 }))

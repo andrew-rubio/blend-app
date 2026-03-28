@@ -22,7 +22,7 @@ export function SessionSummaryStep({ session, onNext }: SessionSummaryStepProps)
         Session Summary
       </h2>
       <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">
-        Great cooking! Here's what you made today.
+        Great cooking! Here&apos;s what you made today.
       </p>
 
       {/* Dishes */}

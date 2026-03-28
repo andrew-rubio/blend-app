@@ -29,11 +29,6 @@ function ToastTrigger({
   )
 }
 
-function ToastRemover({ id }: { id: string }) {
-  const { removeToast } = useToast()
-  return <button onClick={() => removeToast(id)}>Remove</button>
-}
-
 describe('ToastProvider and useToast', () => {
   beforeEach(() => {
     vi.useFakeTimers()
