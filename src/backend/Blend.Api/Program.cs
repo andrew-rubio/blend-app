@@ -14,10 +14,23 @@ using Blend.Api.Search.Services;
 using Blend.Api.Services.Spoonacular;
 using Blend.Infrastructure.BlobStorage;
 using Blend.Infrastructure.Cosmos;
+using Azure.Identity;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ── Azure Key Vault Configuration ────────────────────────────────────────────
+// Load secrets from Key Vault into the configuration system so they're available
+// as normal configuration values (e.g. Jwt:SecretKey, Spoonacular:ApiKey).
+// Key Vault secret names use "--" as separator, which maps to ":" in config keys.
+var keyVaultUri = builder.Configuration["KeyVault:Uri"];
+if (!string.IsNullOrWhiteSpace(keyVaultUri))
+{
+    builder.Configuration.AddAzureKeyVault(
+        new Uri(keyVaultUri),
+        new DefaultAzureCredential());
+}
 
 // ── Service Defaults (OpenTelemetry, service discovery, resilience) ──────────
 builder.AddServiceDefaults();
