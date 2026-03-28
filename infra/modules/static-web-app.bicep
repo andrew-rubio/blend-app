@@ -5,8 +5,8 @@
 @description('Name prefix for all resources')
 param namePrefix string
 
-@description('Azure region (SWA supports a limited set of regions for the resource; content is global)')
-param location string
+@description('Azure region (SWA supports a limited set; content is served globally via CDN)')
+param location string = 'eastasia'
 
 @description('Deployment environment')
 @allowed(['dev', 'staging', 'prod'])
@@ -26,7 +26,7 @@ resource staticWebApp 'Microsoft.Web/staticSites@2023-12-01' = {
   properties: {
     buildProperties: {
       appLocation: 'src/Blend.Web'
-      outputLocation: 'out'
+      outputLocation: '.next'
       skipGithubActionWorkflowGeneration: true
     }
     stagingEnvironmentPolicy: environment == 'prod' ? 'Enabled' : 'Disabled'

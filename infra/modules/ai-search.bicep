@@ -17,7 +17,7 @@ resource searchService 'Microsoft.Search/searchServices@2024-03-01-preview' = {
   name: '${namePrefix}-search-${environment}'
   location: location
   sku: {
-    name: environment == 'prod' ? 'standard' : 'free'
+    name: environment == 'prod' ? 'standard' : 'basic'
   }
   properties: {
     replicaCount: environment == 'prod' ? 2 : 1

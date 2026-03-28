@@ -29,6 +29,9 @@ RUN dotnet publish src/backend/Blend.Api/Blend.Api.csproj \
 FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS runtime
 WORKDIR /app
 
+# Install ICU libraries for globalization support
+RUN apk add --no-cache icu-libs
+
 # Create a non-root user for security
 RUN addgroup --system --gid 1001 appgroup && \
     adduser --system --uid 1001 --ingroup appgroup --no-create-home appuser

@@ -1,9 +1,7 @@
-// ──────────────────────────────────────────────────────────────────────────────
-// main.bicep — Blend App — Top-level orchestration
+// main.bicep - Blend App - Top-level orchestration
 //
 // Deploys all Blend application resources into the target resource group.
 // Parameters are supplied via main.bicepparam (environment-specific files).
-// ──────────────────────────────────────────────────────────────────────────────
 
 targetScope = 'resourceGroup'
 
@@ -20,10 +18,8 @@ param environment string
 @description('Container image tag to deploy to Container Apps')
 param apiImageTag string = 'latest'
 
-// ── Modules ───────────────────────────────────────────────────────────────────
-
+// Container Registry
 module registry 'modules/container-registry.bicep' = {
-  name: 'registry'
   params: {
     namePrefix: namePrefix
     location: location
@@ -31,8 +27,8 @@ module registry 'modules/container-registry.bicep' = {
   }
 }
 
+// Container Apps Environment + Log Analytics
 module containerAppsEnv 'modules/container-apps-environment.bicep' = {
-  name: 'containerAppsEnv'
   params: {
     namePrefix: namePrefix
     location: location
@@ -40,30 +36,35 @@ module containerAppsEnv 'modules/container-apps-environment.bicep' = {
   }
 }
 
+// Key Vault for secrets management
+module keyVault 'modules/key-vault.bicep' = {
+  params: {
+    namePrefix: namePrefix
+    location: location
+    environment: environment
+  }
+}
+
+// Application Insights for API monitoring
+module appInsights 'modules/app-insights.bicep' = {
+  params: {
+    namePrefix: namePrefix
+    location: location
+    environment: environment
+    logAnalyticsWorkspaceId: containerAppsEnv.outputs.logAnalyticsWorkspaceId
+  }
+}
+
+// Static Web App for Next.js frontend
 module staticWebApp 'modules/static-web-app.bicep' = {
-  name: 'staticWebApp'
   params: {
     namePrefix: namePrefix
-    location: location
     environment: environment
   }
 }
 
-module api 'modules/container-app-api.bicep' = {
-  name: 'api'
-  params: {
-    namePrefix: namePrefix
-    location: location
-    environment: environment
-    containerAppsEnvironmentId: containerAppsEnv.outputs.environmentId
-    registryLoginServer: registry.outputs.loginServer
-    imageTag: apiImageTag
-    corsAllowedOrigin: 'https://${staticWebApp.outputs.defaultHostname}'
-  }
-}
-
+// Cosmos DB NoSQL database
 module cosmosDb 'modules/cosmos-db.bicep' = {
-  name: 'cosmosDb'
   params: {
     namePrefix: namePrefix
     location: location
@@ -71,17 +72,8 @@ module cosmosDb 'modules/cosmos-db.bicep' = {
   }
 }
 
-module search 'modules/ai-search.bicep' = {
-  name: 'search'
-  params: {
-    namePrefix: namePrefix
-    location: location
-    environment: environment
-  }
-}
-
+// Blob Storage for media uploads + CDN
 module storage 'modules/storage.bicep' = {
-  name: 'storage'
   params: {
     namePrefix: namePrefix
     location: location
@@ -90,8 +82,34 @@ module storage 'modules/storage.bicep' = {
   }
 }
 
+// API Container App with all configuration wired in
+module api 'modules/container-app-api.bicep' = {
+  params: {
+    namePrefix: namePrefix
+    location: location
+    environment: environment
+    containerAppsEnvironmentId: containerAppsEnv.outputs.environmentId
+    registryLoginServer: registry.outputs.loginServer
+    imageTag: apiImageTag
+    corsAllowedOrigin: 'https://${staticWebApp.outputs.defaultHostname}'
+    cosmosEndpoint: cosmosDb.outputs.documentEndpoint
+    keyVaultUri: keyVault.outputs.keyVaultUri
+    appInsightsConnectionString: appInsights.outputs.connectionString
+    blobEndpoint: storage.outputs.blobEndpoint
+  }
+}
+
+// Azure AI Search
+module search 'modules/ai-search.bicep' = {
+  params: {
+    namePrefix: namePrefix
+    location: location
+    environment: environment
+  }
+}
+
+// Azure Functions for image processing
 module functions 'modules/functions.bicep' = {
-  name: 'functions'
   params: {
     namePrefix: namePrefix
     location: location
@@ -100,8 +118,21 @@ module functions 'modules/functions.bicep' = {
   }
 }
 
-// ── Outputs ───────────────────────────────────────────────────────────────────
+// RBAC role assignments - grants managed identities least-privilege access
+module roleAssignments 'modules/role-assignments.bicep' = {
+  params: {
+    apiPrincipalId: api.outputs.principalId
+    functionsPrincipalId: functions.outputs.principalId
+    cosmosAccountName: cosmosDb.outputs.accountName
+    storageAccountName: storage.outputs.storageAccountName
+    registryName: registry.outputs.registryName
+    keyVaultName: keyVault.outputs.keyVaultName
+  }
+}
 
+// Outputs
 output apiUrl string = api.outputs.apiUrl
 output frontendUrl string = staticWebApp.outputs.defaultHostname
 output registryLoginServer string = registry.outputs.loginServer
+output keyVaultUri string = keyVault.outputs.keyVaultUri
+output appInsightsConnectionString string = appInsights.outputs.connectionString

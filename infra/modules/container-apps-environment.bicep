@@ -52,3 +52,4 @@ resource containerAppsEnv 'Microsoft.App/managedEnvironments@2023-11-02-preview'
 output environmentId string = containerAppsEnv.id
 output environmentName string = containerAppsEnv.name
 output defaultDomain string = containerAppsEnv.properties.defaultDomain
+output logAnalyticsWorkspaceId string = logAnalytics.id

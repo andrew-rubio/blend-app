@@ -55,7 +55,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
           app_location: src/Blend.Web
-          output_location: out
+          output_location: .next
           skip_app_build: true
 
   smoke-tests:

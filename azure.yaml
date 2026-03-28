@@ -1,0 +1,23 @@
+# azure.yaml — Azure Developer CLI configuration for Blend App
+name: blend-app
+metadata:
+  template: blend-app
+
+services:
+  api:
+    project: ./src/backend/Blend.Api
+    host: containerapp
+    language: dotnet
+    docker:
+      path: ./Dockerfile
+      context: .
+
+  web:
+    project: ./src/Blend.Web
+    host: staticwebapp
+    language: js
+    dist: .next/standalone
+
+infra:
+  provider: bicep
+  path: infra

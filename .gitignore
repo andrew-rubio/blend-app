@@ -74,3 +74,4 @@ lcov.info
 *.log
 logs/
 
+infra/main.json

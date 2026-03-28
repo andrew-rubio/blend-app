@@ -29,11 +29,21 @@ resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2024-02-15-preview
         isZoneRedundant: environment == 'prod'
       }
     ]
-    enableFreeTier: environment == 'dev'
+    enableFreeTier: false
     enableAutomaticFailover: environment == 'prod'
     enableMultipleWriteLocations: false
-    backupPolicy: {
-      type: environment == 'prod' ? 'Continuous' : 'Periodic'
+    backupPolicy: environment == 'prod' ? {
+      type: 'Continuous'
+      continuousModeProperties: {
+        tier: 'Continuous7Days'
+      }
+    } : {
+      type: 'Periodic'
+      periodicModeProperties: {
+        backupIntervalInMinutes: 240
+        backupRetentionIntervalInHours: 8
+        backupStorageRedundancy: 'Local'
+      }
     }
     publicNetworkAccess: 'Enabled'
     enableAnalyticalStorage: false

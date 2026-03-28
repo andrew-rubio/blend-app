@@ -3,6 +3,7 @@
 // ──────────────────────────────────────────────────────────────────────────────
 
 @description('Name prefix for all resources')
+@minLength(3)
 param namePrefix string
 
 @description('Azure region')
@@ -30,7 +31,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     accessTier: 'Hot'
     supportsHttpsTrafficOnly: true
     minimumTlsVersion: 'TLS1_2'
-    allowBlobPublicAccess: environment != 'prod'
+    allowBlobPublicAccess: false
     allowSharedKeyAccess: true
     networkAcls: {
       defaultAction: 'Allow'
@@ -67,16 +68,16 @@ resource assetsContainer 'Microsoft.Storage/storageAccounts/blobServices/contain
   parent: blobService
   name: 'blend-assets'
   properties: {
-    publicAccess: 'Blob'
+    publicAccess: 'None'
   }
 }
 
-// ── CDN Profile ──────────────────────────────────────────────────────────────
-resource cdnProfile 'Microsoft.Cdn/profiles@2023-05-01' = {
-  name: '${namePrefix}-cdn-${environment}'
+// ── Front Door CDN Profile (replaces deprecated classic CDN) ─────────────────
+resource frontDoorProfile 'Microsoft.Cdn/profiles@2024-02-01' = {
+  name: '${namePrefix}-fd-${environment}'
   location: 'Global'
   sku: {
-    name: 'Standard_Microsoft'
+    name: 'Standard_AzureFrontDoor'
   }
   tags: {
     environment: environment
@@ -84,36 +85,64 @@ resource cdnProfile 'Microsoft.Cdn/profiles@2023-05-01' = {
   }
 }
 
-// ── CDN Endpoint ─────────────────────────────────────────────────────────────
-resource cdnEndpoint 'Microsoft.Cdn/profiles/endpoints@2023-05-01' = {
-  parent: cdnProfile
-  name: '${namePrefix}-cdn-ep-${environment}'
+resource frontDoorEndpoint 'Microsoft.Cdn/profiles/afdEndpoints@2024-02-01' = {
+  parent: frontDoorProfile
+  name: '${namePrefix}-fd-ep-${environment}'
   location: 'Global'
   properties: {
-    originHostHeader: '${storageAccountName}.blob.${az.environment().suffixes.storage}'
-    isHttpAllowed: false
-    isHttpsAllowed: true
-    origins: [
-      {
-        name: 'storage-origin'
-        properties: {
-          hostName: '${storageAccountName}.blob.${az.environment().suffixes.storage}'
-          httpsPort: 443
-          originHostHeader: '${storageAccountName}.blob.${az.environment().suffixes.storage}'
-        }
-      }
-    ]
-    isCompressionEnabled: true
-    contentTypesToCompress: [
-      'application/json'
-      'text/plain'
-      'image/svg+xml'
-    ]
+    enabledState: 'Enabled'
   }
+}
+
+resource originGroup 'Microsoft.Cdn/profiles/originGroups@2024-02-01' = {
+  parent: frontDoorProfile
+  name: 'storage-origin-group'
+  properties: {
+    loadBalancingSettings: {
+      sampleSize: 4
+      successfulSamplesRequired: 3
+    }
+    healthProbeSettings: {
+      probePath: '/'
+      probeRequestType: 'HEAD'
+      probeProtocol: 'Https'
+      probeIntervalInSeconds: 100
+    }
+  }
+}
+
+resource origin 'Microsoft.Cdn/profiles/originGroups/origins@2024-02-01' = {
+  parent: originGroup
+  name: 'storage-origin'
+  properties: {
+    hostName: '${storageAccountName}.blob.${az.environment().suffixes.storage}'
+    httpPort: 80
+    httpsPort: 443
+    originHostHeader: '${storageAccountName}.blob.${az.environment().suffixes.storage}'
+    priority: 1
+    weight: 1000
+    enabledState: 'Enabled'
+  }
+}
+
+resource route 'Microsoft.Cdn/profiles/afdEndpoints/routes@2024-02-01' = {
+  parent: frontDoorEndpoint
+  name: 'storage-route'
+  properties: {
+    originGroup: {
+      id: originGroup.id
+    }
+    supportedProtocols: ['Https']
+    patternsToMatch: ['/*']
+    forwardingProtocol: 'HttpsOnly'
+    linkToDefaultDomain: 'Enabled'
+    httpsRedirect: 'Enabled'
+  }
+  dependsOn: [origin]
 }
 
 // ── Outputs ───────────────────────────────────────────────────────────────────
 output storageAccountName string = storageAccount.name
 output storageAccountId string = storageAccount.id
 output blobEndpoint string = storageAccount.properties.primaryEndpoints.blob
-output cdnEndpoint string = 'https://${cdnEndpoint.properties.hostName}'
+output cdnEndpoint string = 'https://${frontDoorEndpoint.properties.hostName}'
