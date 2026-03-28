@@ -1,3 +1,4 @@
+using Azure.Identity;
 using Blend.Domain.Entities;
 using Blend.Domain.Identity;
 using Blend.Domain.Repositories;
@@ -50,9 +51,15 @@ public static class CosmosServiceExtensions
                 return new CosmosClient(opts.EndpointUri, opts.AccountKey, clientOptions);
             }
 
+            // Managed identity / DefaultAzureCredential when EndpointUri is set without AccountKey
+            if (!string.IsNullOrWhiteSpace(opts.EndpointUri))
+            {
+                return new CosmosClient(opts.EndpointUri, new DefaultAzureCredential(), clientOptions);
+            }
+
             throw new InvalidOperationException(
-                "Cosmos DB is not configured. Provide either 'CosmosDb:ConnectionString' " +
-                "or both 'CosmosDb:EndpointUri' and 'CosmosDb:AccountKey' in configuration.");
+                "Cosmos DB is not configured. Provide 'CosmosDb:ConnectionString', " +
+                "or 'CosmosDb:EndpointUri' (with optional 'CosmosDb:AccountKey').");
         });
 
         // Register DatabaseInitializer
