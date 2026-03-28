@@ -21,7 +21,7 @@ vi.mock('@/stores/authStore', () => ({
 const mockLoginApi = vi.fn()
 vi.mock('@/lib/api/auth', () => ({
   loginApi: (...args: unknown[]) => mockLoginApi(...args),
-  getSocialLoginUrl: (provider: string) => `http://localhost:5000/api/auth/${provider}`,
+  getSocialLoginUrl: (provider: string) => `http://localhost:5000/api/v1/auth/${provider}`,
 }))
 
 import LoginPage from '@/app/(auth)/login/page'

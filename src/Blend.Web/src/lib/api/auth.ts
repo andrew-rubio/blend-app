@@ -40,7 +40,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 }
 
 export async function loginApi(data: LoginRequest): Promise<AuthResponse> {
-  const response = await fetch(`${API_URL}/api/auth/login`, {
+  const response = await fetch(`${API_URL}/api/v1/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -50,7 +50,7 @@ export async function loginApi(data: LoginRequest): Promise<AuthResponse> {
 }
 
 export async function registerApi(data: RegisterRequest): Promise<AuthResponse> {
-  const response = await fetch(`${API_URL}/api/auth/register`, {
+  const response = await fetch(`${API_URL}/api/v1/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -60,14 +60,14 @@ export async function registerApi(data: RegisterRequest): Promise<AuthResponse> 
 }
 
 export async function logoutApi(): Promise<void> {
-  await fetch(`${API_URL}/api/auth/logout`, {
+  await fetch(`${API_URL}/api/v1/auth/logout`, {
     method: 'POST',
     credentials: 'include',
   })
 }
 
 export async function refreshTokenApi(): Promise<{ token: string }> {
-  const response = await fetch(`${API_URL}/api/auth/refresh`, {
+  const response = await fetch(`${API_URL}/api/v1/auth/refresh`, {
     method: 'POST',
     credentials: 'include',
   })
@@ -75,7 +75,7 @@ export async function refreshTokenApi(): Promise<{ token: string }> {
 }
 
 export async function forgotPasswordApi(email: string): Promise<void> {
-  await fetch(`${API_URL}/api/auth/forgot-password`, {
+  await fetch(`${API_URL}/api/v1/auth/forgot-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email }),
@@ -83,7 +83,7 @@ export async function forgotPasswordApi(email: string): Promise<void> {
 }
 
 export async function resetPasswordApi(token: string, password: string): Promise<void> {
-  const response = await fetch(`${API_URL}/api/auth/reset-password`, {
+  const response = await fetch(`${API_URL}/api/v1/auth/reset-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token, password }),
@@ -92,5 +92,5 @@ export async function resetPasswordApi(token: string, password: string): Promise
 }
 
 export function getSocialLoginUrl(provider: 'google' | 'facebook' | 'twitter'): string {
-  return `${API_URL}/api/auth/${provider}`
+  return `${API_URL}/api/v1/auth/${provider}`
 }
