@@ -1,10 +1,16 @@
-import RecipeClientPage from './ClientPage'
+'use client'
 
-export function generateStaticParams() {
-  return []
-}
+import { Suspense } from 'react'
+import { useParams } from 'next/navigation'
+import { RecipeDetailContainer } from '@/components/features/recipe/RecipeDetailContainer'
+import { RecipeDetailSkeleton } from '@/components/features/recipe/RecipeDetailSkeleton'
 
 export default function RecipePage() {
-  return <RecipeClientPage />
-}
+  const { id } = useParams<{ id: string }>()
 
+  return (
+    <Suspense fallback={<RecipeDetailSkeleton />}>
+      <RecipeDetailContainer id={id} />
+    </Suspense>
+  )
+}

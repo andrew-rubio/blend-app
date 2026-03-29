@@ -1,10 +1,9 @@
-import UserProfileClientPage from './ClientPage'
+'use client'
 
-export function generateStaticParams() {
-  return []
-}
+import { useParams } from 'next/navigation'
+import { PublicProfileContainer } from '@/components/features/profile/PublicProfileContainer'
 
 export default function UserProfilePage() {
-  return <UserProfileClientPage />
+  const { userId } = useParams<{ userId: string }>()
+  return <PublicProfileContainer userId={userId} />
 }
-

@@ -1,10 +1,11 @@
-import WrapUpClientPage from './ClientPage'
+'use client'
 
-export function generateStaticParams() {
-  return []
-}
+import { useParams } from 'next/navigation'
+import { WrapUpWizard } from '@/components/features/cook/WrapUpWizard'
 
 export default function WrapUpPage() {
-  return <WrapUpClientPage />
-}
+  const params = useParams<{ id: string }>()
+  const sessionId = params.id
 
+  return <WrapUpWizard sessionId={sessionId} />
+}
