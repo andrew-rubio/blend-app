@@ -21,31 +21,11 @@ jobs:
       name: production
       url: ${{ steps.deploy.outputs.static_web_app_url }}
 
-    defaults:
-      run:
-        working-directory: src/Blend.Web
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: true
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: src/Blend.Web/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build Next.js application
-        run: npm run build
-        env:
-          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
-          NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
 
       - name: Deploy to Azure Static Web Apps
         id: deploy
@@ -55,8 +35,10 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
           app_location: src/Blend.Web
-          output_location: ''
-          skip_app_build: true
+          output_location: .next
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
 
   smoke-tests:
     name: Post-Deploy Smoke Tests
