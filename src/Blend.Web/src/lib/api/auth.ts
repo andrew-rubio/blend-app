@@ -8,7 +8,7 @@ export interface LoginRequest {
 }
 
 export interface RegisterRequest {
-  name: string
+  displayName: string
   email: string
   password: string
 }
@@ -27,8 +27,9 @@ async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     let message = 'An error occurred'
     try {
-      const body = (await response.json()) as { message?: string }
-      if (body.message) message = body.message
+      const body = (await response.json()) as { message?: string; detail?: string }
+      if (body.detail) message = body.detail
+      else if (body.message) message = body.message
     } catch {
       // ignore parse errors
     }

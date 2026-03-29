@@ -122,7 +122,7 @@ export default function RegisterPage() {
     setIsLoading(true)
     setErrors({})
     try {
-      const response = await registerApi({ name: name.trim(), email, password })
+      const response = await registerApi({ displayName: name.trim(), email, password })
       login(response.user, response.token)
       router.push('/preferences')
     } catch (err: unknown) {

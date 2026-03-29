@@ -1,8 +1,11 @@
 using System.Security.Claims;
 using Blend.Api.Recipes.Models;
 using Blend.Api.Recipes.Services;
+using Blend.Domain.Entities;
+using Blend.Domain.Identity;
 using Blend.Domain.Repositories;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Blend.Api.Recipes.Controllers;
@@ -13,14 +16,17 @@ namespace Blend.Api.Recipes.Controllers;
 public sealed class RecipesController : ControllerBase
 {
     private readonly IRecipeService? _recipeService;
+    private readonly UserManager<BlendUser>? _userManager;
     private readonly ILogger<RecipesController> _logger;
 
     public RecipesController(
         ILogger<RecipesController> logger,
-        IRecipeService? recipeService = null)
+        IRecipeService? recipeService = null,
+        UserManager<BlendUser>? userManager = null)
     {
         _logger = logger;
         _recipeService = recipeService;
+        _userManager = userManager;
     }
 
     // POST /api/v1/recipes
@@ -73,7 +79,7 @@ public sealed class RecipesController : ControllerBase
                 detail: "Recipe not found.");
         }
 
-        return Ok(recipe);
+        return Ok(await MapToResponseAsync(recipe, userId, ct));
     }
 
     // PUT /api/v1/recipes/{id}
@@ -281,4 +287,69 @@ public sealed class RecipesController : ControllerBase
     private IActionResult ServiceUnavailableProblem() =>
         Problem(statusCode: StatusCodes.Status503ServiceUnavailable, title: "Service unavailable",
             detail: "The recipe service is not available.");
+
+    private async Task<RecipeResponse> MapToResponseAsync(Recipe recipe, string? requestingUserId, CancellationToken ct)
+    {
+        // Determine data source: Spoonacular recipes have no AuthorId.
+        var isSpoonacular = string.IsNullOrEmpty(recipe.AuthorId);
+
+        AuthorResponse? author = null;
+        if (!isSpoonacular && _userManager is not null)
+        {
+            var user = await _userManager.FindByIdAsync(recipe.AuthorId);
+            if (user is not null)
+            {
+                author = new AuthorResponse
+                {
+                    Id = user.Id,
+                    Name = user.DisplayName ?? user.UserName ?? "Unknown",
+                    AvatarUrl = user.ProfilePhotoUrl,
+                };
+            }
+        }
+
+        return new RecipeResponse
+        {
+            Id = recipe.Id,
+            Title = recipe.Title,
+            Description = recipe.Description,
+            ImageUrl = recipe.FeaturedPhotoUrl,
+            Photos = recipe.Photos,
+            Cuisines = recipe.CuisineType is not null ? [recipe.CuisineType] : [],
+            DishTypes = recipe.DishType is not null ? [recipe.DishType] : [],
+            Diets = recipe.Tags,
+            Intolerances = [],
+            ReadyInMinutes = recipe.PrepTime + recipe.CookTime > 0 ? recipe.PrepTime + recipe.CookTime : null,
+            PrepTimeMinutes = recipe.PrepTime > 0 ? recipe.PrepTime : null,
+            CookTimeMinutes = recipe.CookTime > 0 ? recipe.CookTime : null,
+            Servings = recipe.Servings,
+            Ingredients = recipe.Ingredients.Select((ing, i) => new IngredientResponse
+            {
+                Id = ing.IngredientId ?? i.ToString(),
+                Name = ing.IngredientName,
+                Amount = ing.Quantity,
+                Unit = ing.Unit,
+            }).ToList(),
+            Steps = recipe.Directions.Select(d => new StepResponse
+            {
+                Number = d.StepNumber,
+                Step = d.Text,
+            }).ToList(),
+            DataSource = isSpoonacular ? "Spoonacular" : "Community",
+            Author = author,
+            NutritionInfo = recipe.NutritionInfo is not null ? new NutritionResponse
+            {
+                Calories = recipe.NutritionInfo.Calories,
+                Protein = recipe.NutritionInfo.Protein,
+                Carbs = recipe.NutritionInfo.Carbs,
+                Fat = recipe.NutritionInfo.Fat,
+                Fiber = recipe.NutritionInfo.Fiber,
+                Sugar = recipe.NutritionInfo.Sugar,
+            } : null,
+            LikeCount = recipe.LikeCount,
+            ViewCount = recipe.ViewCount,
+            CreatedAt = recipe.CreatedAt != DateTimeOffset.MinValue ? recipe.CreatedAt : null,
+            UpdatedAt = recipe.UpdatedAt != DateTimeOffset.MinValue ? recipe.UpdatedAt : null,
+        };
+    }
 }

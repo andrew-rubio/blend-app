@@ -173,6 +173,13 @@ builder.Services.AddRouting(options => options.LowercaseUrls = true);
 
 var app = builder.Build();
 
+// ── Cosmos DB Initialisation ──────────────────────────────────────────────────
+if (!string.IsNullOrWhiteSpace(cosmosSection["ConnectionString"])
+    || !string.IsNullOrWhiteSpace(cosmosSection["EndpointUri"]))
+{
+    await app.EnsureCosmosDbAsync();
+}
+
 // ── Middleware Pipeline ────────────────────────────────────────────────────────
 app.UseCorrelationId();
 app.UseGlobalExceptionHandler();

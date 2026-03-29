@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Azure.Identity;
 using Blend.Domain.Entities;
 using Blend.Domain.Identity;
@@ -32,9 +33,9 @@ public static class CosmosServiceExtensions
 
             var clientOptions = new CosmosClientOptions
             {
-                SerializerOptions = new CosmosSerializationOptions
+                UseSystemTextJsonSerializerWithOptions = new JsonSerializerOptions
                 {
-                    PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 },
                 MaxRetryAttemptsOnRateLimitedRequests = opts.MaxRetryAttemptsOnRateLimitedRequests,
                 MaxRetryWaitTimeOnRateLimitedRequests = TimeSpan.FromSeconds(opts.MaxRetryWaitTimeInSeconds),

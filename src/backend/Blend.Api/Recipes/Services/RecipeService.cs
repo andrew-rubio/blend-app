@@ -1,4 +1,6 @@
 using Blend.Api.Recipes.Models;
+using Blend.Api.Services.Spoonacular;
+using Blend.Api.Services.Spoonacular.Models;
 using Blend.Domain.Entities;
 using Blend.Domain.Identity;
 using Blend.Domain.Repositories;
@@ -12,18 +14,21 @@ public sealed class RecipeService : IRecipeService
     private readonly IRepository<Recipe>? _recipeRepository;
     private readonly IRepository<Activity>? _activityRepository;
     private readonly UserManager<BlendUser>? _userManager;
+    private readonly ISpoonacularService? _spoonacularService;
     private readonly ILogger<RecipeService> _logger;
 
     public RecipeService(
         ILogger<RecipeService> logger,
         IRepository<Recipe>? recipeRepository = null,
         IRepository<Activity>? activityRepository = null,
-        UserManager<BlendUser>? userManager = null)
+        UserManager<BlendUser>? userManager = null,
+        ISpoonacularService? spoonacularService = null)
     {
         _logger = logger;
         _recipeRepository = recipeRepository;
         _activityRepository = activityRepository;
         _userManager = userManager;
+        _spoonacularService = spoonacularService;
     }
 
     public IReadOnlyList<string> ValidateCreateRecipe(CreateRecipeRequest request)
@@ -147,35 +152,116 @@ public sealed class RecipeService : IRecipeService
 
     public async Task<Recipe?> GetRecipeAsync(string id, string? requestingUserId, CancellationToken ct = default)
     {
-        if (_recipeRepository is null)
+        // Try the community recipe store first.
+        if (_recipeRepository is not null)
         {
-            _logger.LogWarning("Recipe repository is not available; cannot get recipe {RecipeId}.", id);
+            var results = await _recipeRepository.GetByQueryAsync(
+                "SELECT * FROM c WHERE c.id = @id",
+                new Dictionary<string, object> { ["@id"] = id },
+                partitionKey: null,
+                ct);
+
+            var recipe = results.FirstOrDefault();
+            if (recipe is not null && !recipe.IsDeleted)
+            {
+                if (!recipe.IsPublic && recipe.AuthorId != requestingUserId)
+                {
+                    return null;
+                }
+                return recipe;
+            }
+        }
+
+        // Fall back to Spoonacular for numeric IDs (Spoonacular recipes).
+        if (_spoonacularService is not null && int.TryParse(id, out var spoonacularId))
+        {
+            var result = await _spoonacularService.GetRecipeInformationAsync(spoonacularId, ct);
+            if (result.IsAvailable && result.Data is not null)
+            {
+                return MapSpoonacularToRecipe(result.Data);
+            }
+        }
+
+        return null;
+    }
+
+    private static Recipe MapSpoonacularToRecipe(RecipeDetail detail)
+    {
+        // Parse HTML instructions into structured steps.
+        var directions = ParseInstructions(detail.Instructions);
+
+        return new Recipe
+        {
+            Id = detail.SpoonacularId.ToString(),
+            AuthorId = string.Empty,
+            Title = detail.Title,
+            Description = StripHtml(detail.Summary),
+            Ingredients = detail.Ingredients.Select(i => new RecipeIngredient
+            {
+                Quantity = i.Amount,
+                Unit = i.Unit,
+                IngredientName = i.Name,
+                IngredientId = i.Id.ToString(),
+            }).ToList(),
+            Directions = directions,
+            PrepTime = 0,
+            CookTime = detail.ReadyInMinutes,
+            Servings = detail.Servings,
+            CuisineType = detail.Cuisines.FirstOrDefault(),
+            DishType = detail.DishTypes.FirstOrDefault(),
+            Tags = detail.Diets,
+            FeaturedPhotoUrl = detail.ImageUrl,
+            Photos = detail.ImageUrl is not null ? [detail.ImageUrl] : [],
+            IsPublic = true,
+            LikeCount = 0,
+            ViewCount = 0,
+            CreatedAt = DateTimeOffset.MinValue,
+            UpdatedAt = DateTimeOffset.MinValue,
+        };
+    }
+
+    private static IReadOnlyList<RecipeDirection> ParseInstructions(string? html)
+    {
+        if (string.IsNullOrWhiteSpace(html))
+        {
+            return [];
+        }
+
+        // Split on <li>, <ol> list items or numbered patterns; fall back to sentence splitting.
+        var stripped = StripHtml(html);
+        if (string.IsNullOrWhiteSpace(stripped))
+        {
+            return [];
+        }
+
+        var sentences = stripped
+            .Split(['.', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(s => s.Length > 5)
+            .ToList();
+
+        return sentences.Select((s, i) => new RecipeDirection
+        {
+            StepNumber = i + 1,
+            Text = s.EndsWith('.') ? s : s + ".",
+        }).ToList();
+    }
+
+    private static string? StripHtml(string? html)
+    {
+        if (string.IsNullOrWhiteSpace(html))
+        {
             return null;
         }
 
-        var results = await _recipeRepository.GetByQueryAsync(
-            "SELECT * FROM c WHERE c.id = @id",
-            new Dictionary<string, object> { ["@id"] = id },
-            partitionKey: null,
-            ct);
-
-        var recipe = results.FirstOrDefault();
-        if (recipe is null)
-        {
-            return null;
-        }
-
-        if (recipe.IsDeleted)
-        {
-            return null;
-        }
-
-        if (!recipe.IsPublic && recipe.AuthorId != requestingUserId)
-        {
-            return null;
-        }
-
-        return recipe;
+        // Remove HTML tags.
+        return System.Text.RegularExpressions.Regex.Replace(html, "<[^>]+>", " ")
+            .Replace("&amp;", "&")
+            .Replace("&lt;", "<")
+            .Replace("&gt;", ">")
+            .Replace("&nbsp;", " ")
+            .Replace("&#39;", "'")
+            .Replace("&quot;", "\"")
+            .Trim();
     }
 
     public async Task<(Recipe? Recipe, RecipeOpResult Result, IReadOnlyList<string>? Errors)> UpdateRecipeAsync(
