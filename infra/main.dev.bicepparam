@@ -7,3 +7,4 @@ param namePrefix = 'blend-uk'
 param location = 'uksouth'
 param environment = 'dev'
 param apiImageTag = 'latest'
+param deployFunctions = false

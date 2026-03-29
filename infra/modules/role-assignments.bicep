@@ -87,7 +87,7 @@ resource apiKeyVaultRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = 
 }
 
 // Functions → Blob Storage Data Contributor (image processing)
-resource functionsBlobRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource functionsBlobRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(functionsPrincipalId)) {
   name: guid(storageAccount.id, functionsPrincipalId, storageBlobDataContributor)
   scope: storageAccount
   properties: {
@@ -98,7 +98,7 @@ resource functionsBlobRole 'Microsoft.Authorization/roleAssignments@2022-04-01' 
 }
 
 // Functions → Key Vault Secrets User
-resource functionsKeyVaultRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource functionsKeyVaultRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(functionsPrincipalId)) {
   name: guid(keyVault.id, functionsPrincipalId, keyVaultSecretsUser)
   scope: keyVault
   properties: {

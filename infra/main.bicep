@@ -18,6 +18,9 @@ param environment string
 @description('Container image tag to deploy to Container Apps')
 param apiImageTag string = 'latest'
 
+@description('Deploy Azure Functions for image processing (requires Dynamic VM quota)')
+param deployFunctions bool = true
+
 // Container Registry
 module registry 'modules/container-registry.bicep' = {
   params: {
@@ -108,8 +111,8 @@ module search 'modules/ai-search.bicep' = {
   }
 }
 
-// Azure Functions for image processing
-module functions 'modules/functions.bicep' = {
+// Azure Functions for image processing (skipped when subscription lacks Dynamic VM quota)
+module functions 'modules/functions.bicep' = if (deployFunctions) {
   params: {
     namePrefix: namePrefix
     location: location
@@ -122,7 +125,7 @@ module functions 'modules/functions.bicep' = {
 module roleAssignments 'modules/role-assignments.bicep' = {
   params: {
     apiPrincipalId: api.outputs.principalId
-    functionsPrincipalId: functions.outputs.principalId
+    functionsPrincipalId: deployFunctions ? functions.outputs.principalId : ''
     cosmosAccountName: cosmosDb.outputs.accountName
     storageAccountName: storage.outputs.storageAccountName
     registryName: registry.outputs.registryName
