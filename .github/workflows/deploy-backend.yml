@@ -85,7 +85,7 @@ jobs:
         uses: azure/container-apps-deploy-action@v2
         with:
           resourceGroup: ${{ vars.AZURE_RESOURCE_GROUP }}
-          containerAppName: blend-api
+          containerAppName: blend-api-dev
           imageToDeploy: ${{ vars.ACR_LOGIN_SERVER }}/blend-api@${{ needs.build-and-push.outputs.image-digest }}
           acrName: ${{ vars.ACR_NAME }}
 
