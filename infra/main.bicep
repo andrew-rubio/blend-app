@@ -19,7 +19,7 @@ param environment string
 param apiImageTag string = 'latest'
 
 @description('Deploy Azure Functions for image processing (requires Dynamic VM quota)')
-param deployFunctions bool = true
+param deployFunctions bool = false
 
 @description('Use a public placeholder image for initial provisioning (before first ACR push)')
 param usePublicImage bool = true
