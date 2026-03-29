@@ -21,6 +21,9 @@ param apiImageTag string = 'latest'
 @description('Deploy Azure Functions for image processing (requires Dynamic VM quota)')
 param deployFunctions bool = true
 
+@description('Use a public placeholder image for initial provisioning (before first ACR push)')
+param usePublicImage bool = true
+
 // Container Registry
 module registry 'modules/container-registry.bicep' = {
   params: {
@@ -59,9 +62,11 @@ module appInsights 'modules/app-insights.bicep' = {
 }
 
 // Static Web App for Next.js frontend
+// SWA only supports a limited set of regions; westeurope is the closest to UK South
 module staticWebApp 'modules/static-web-app.bicep' = {
   params: {
     namePrefix: namePrefix
+    location: 'westeurope'
     environment: environment
   }
 }
@@ -94,6 +99,7 @@ module api 'modules/container-app-api.bicep' = {
     containerAppsEnvironmentId: containerAppsEnv.outputs.environmentId
     registryLoginServer: registry.outputs.loginServer
     imageTag: apiImageTag
+    usePublicImage: usePublicImage
     corsAllowedOrigin: 'https://${staticWebApp.outputs.defaultHostname}'
     cosmosEndpoint: cosmosDb.outputs.documentEndpoint
     keyVaultUri: keyVault.outputs.keyVaultUri
