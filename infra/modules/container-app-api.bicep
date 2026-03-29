@@ -61,6 +61,7 @@ resource apiApp 'Microsoft.App/containerApps@2023-11-02-preview' = {
           allowedOrigins: [corsAllowedOrigin]
           allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
           allowedHeaders: ['*']
+          allowCredentials: true
         }
       }
       registries: usePublicImage ? [] : [
