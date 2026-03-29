@@ -6,7 +6,7 @@
 param namePrefix string
 
 @description('Azure region (SWA supports a limited set; content is served globally via CDN)')
-param location string = 'eastasia'
+param location string = 'westeurope'
 
 @description('Deployment environment')
 @allowed(['dev', 'staging', 'prod'])
