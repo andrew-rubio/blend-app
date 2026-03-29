@@ -3,7 +3,7 @@
 // ──────────────────────────────────────────────────────────────────────────────
 using './main.bicep'
 
-param namePrefix = 'blend-dev'
-param location = 'australiaeast'
+param namePrefix = 'blend-uk'
+param location = 'uksouth'
 param environment = 'dev'
 param apiImageTag = 'latest'
