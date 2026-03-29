@@ -5,6 +5,10 @@ import { useParams } from 'next/navigation'
 import { RecipeDetailContainer } from '@/components/features/recipe/RecipeDetailContainer'
 import { RecipeDetailSkeleton } from '@/components/features/recipe/RecipeDetailSkeleton'
 
+export function generateStaticParams() {
+  return []
+}
+
 export default function RecipePage() {
   const { id } = useParams<{ id: string }>()
 

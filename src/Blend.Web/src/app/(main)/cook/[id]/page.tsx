@@ -5,6 +5,10 @@ import { useParams, useRouter } from 'next/navigation'
 import { useCreateSession, useActiveSession } from '@/hooks/useCookMode'
 import { CookModeContainer } from '@/components/features/cook/CookModeContainer'
 
+export function generateStaticParams() {
+  return []
+}
+
 export default function CookRecipePage() {
   const params = useParams<{ id: string }>()
   const recipeId = params.id
