@@ -26,7 +26,7 @@ RUN dotnet publish src/backend/Blend.Api/Blend.Api.csproj \
     /p:UseAppHost=false
 
 # ── Stage 2: Runtime ──────────────────────────────────────────────────────────
-FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS runtime
 WORKDIR /app
 
 # Install ICU libraries for globalization support
